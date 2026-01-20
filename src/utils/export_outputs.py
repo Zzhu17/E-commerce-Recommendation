@@ -6,7 +6,7 @@ import joblib
 
 def export_recommendations_csv(interaction_path="data/interactions.csv", method="user_cf", top_k=10, output_path="output/recommendations.csv"):
     """
-    为所有用户导出推荐结果到 CSV，供 Tableau 等可视化工具使用。
+    为所有用户导出推荐结果到 CSV，供 Power BI 等可视化工具使用。
     输出格式：user_id, rank, item_id, method
     """
     df = pd.read_csv(interaction_path)
@@ -34,7 +34,7 @@ def export_recommendations_csv(interaction_path="data/interactions.csv", method=
 
 def export_conversion_predictions(model_path="src/models/conversion_model.pkl", feature_data_path="data/converted_features.csv", output_path="output/conversion_predictions.csv"):
     """
-    使用已训练的转化模型，对特征数据进行预测，并导出结果 CSV，供 Tableau 使用。
+    使用已训练的转化模型，对特征数据进行预测，并导出结果 CSV，供 Power BI 使用。
     输出格式：原始特征列 + predicted_label + predicted_proba
     """
     # 读取模型和特征数据
