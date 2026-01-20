@@ -78,7 +78,7 @@ python src/analytics/export_dashboard.py
 - Insight report: `docs/insights_report.md`
 - Dashboard spec: `docs/dashboard_spec.md`
 - DAX template: `docs/dax_measures_template.md`
-- Power BI screenshots: `e-commerce-recommend.pdf`
+- Power BI screenshots: `e-commerce-recommend.pdf`[e-commerce-recommend.pdf]
 
 ## Analysis Outcome
 - Funnel performance: view->purchase CVR ~0.83%, view->addtocart 2.69%, addtocart->purchase 31.07%; main drop-off happens at view->addtocart.
