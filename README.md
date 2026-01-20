@@ -25,7 +25,7 @@ This project analyzes e-commerce user behavior to quantify conversion funnel per
 - Dashboard views: `sql/analytics/dashboard_views.sql`
 - Power BI extracts: `dashboards/powerbi/extracts/`
 - DAX template: `docs/dax_measures_template.md`
-- Power BI screenshots:[e-commerce-recommend.pdf] `e-commerce-recommend.pdf`
+- Power BI screenshots: [e-commerce-recommend.pdf] `e-commerce-recommend.pdf`
 
 ## Results (RetailRocket 2015-05-03 to 2015-09-18)
 - Coverage: 1,407,580 users, 417,053 products, 2,756,101 events, 22,457 orders
