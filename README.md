@@ -95,3 +95,4 @@ RECO_SAMPLE_MOD=200 python src/models/evaluate_recommender_offline.py
 Outputs:
 - `output/recommendation_metrics.csv`
 - `docs/recommendation_results.md`
+- `ecommerce-recommend.pdf` (Power BI dashboard screenshots)
