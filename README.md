@@ -86,8 +86,8 @@ Interleaving check (popularity vs hybrid) shows lower NDCG@10 for the interleave
 (0.0334) than popularity (0.0944) in the current sample, indicating hybrid needs stronger
 personalization signals before deployment.
 
-Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10):
-- NDCG@10: popularity 0.0944, collaborative filtering 0.0000
+Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10): NDCG@10 popularity 0.0944, collaborative filtering 0.0000
+popularity 0.0944, collaborative filtering 0.0000
 
 ## Trade-offs & Observations
 - Better coverage/diversity can come at the cost of lower Hit@K
@@ -103,6 +103,11 @@ Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10):
   - Hybrid recommendation approaches
 
 ## Reproducibility
+Quickstart (DB + schema + data):
+```bash
+./scripts/bootstrap_postgres.sh
+```
+
 Data load:
 - `src/data/load_rocket_postgres.py`
 
@@ -120,6 +125,21 @@ Outputs:
 - `artifacts/data_fingerprint.json`
 - `artifacts/experiments/interleaving_results.csv`
 - `artifacts/experiments/20260125_102952/` (latest grid run artifacts)
+
+## Project Navigation (Step1/Step2/Step3)
+Step 1: Robustness grid + summary
+- Run: `DATABASE_URL=... python experiments/run_experiments.py`
+- Outputs: `artifacts/experiments/<run_id>/results.csv`, `results.parquet`, `plots/`, `summary.md`
+
+Step 2: Ranking metrics + segmentation + diagnostics
+- NDCG@K added in `src/evaluation/metrics.py`
+- Segment results in `artifacts/experiments/<run_id>/segment_results.csv`
+- Diagnostics in `docs/data_diagnostics.md`
+
+Step 3: Sanity check + interleaving + reproducibility
+- Single eval (auto-patches README): `DATABASE_URL=... python experiments/single_eval.py`
+- Interleaving results: `artifacts/experiments/interleaving_results.csv`
+- Data fingerprint: `python experiments/data_fingerprint.py` (also embedded in `manifest.json`)
 
 ## Experiment Framework (DS)
 Batch experiments generate a full artifact bundle per run:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DB_URL=${DATABASE_URL:-"postgresql://localhost:5432/rocket"}
+DB_URL=${DATABASE_URL:-"postgresql://rocket:Zzp990812@localhost:5434/rocket"}
 
 psql "$DB_URL" -f sql/schema/00_raw_tables.sql
 psql "$DB_URL" -f sql/schema/01_load_raw.sql

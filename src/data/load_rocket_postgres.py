@@ -35,7 +35,7 @@ def copy_csv(cursor, table: str, path: Path, columns: str) -> None:
 
 
 def main() -> None:
-    db_url = os.getenv("DATABASE_URL", "postgresql://localhost:5432/rocket")
+    db_url = os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket")
     if "localhost" in db_url and "::1" in db_url:
         db_url = db_url.replace("localhost", "127.0.0.1")
     conn = psycopg2.connect(db_url)

@@ -28,5 +28,9 @@
   "events_time_range_ms": {
     "min": 1430622004384,
     "max": 1442545187788
+  },
+  "events_entities": {
+    "unique_users": 1407580,
+    "unique_items": 235061
   }
 }

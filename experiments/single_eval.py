@@ -18,17 +18,30 @@ def patch_readme(pop_ndcg: float, cf_ndcg: float) -> None:
     text = README_PATH.read_text(encoding="utf-8")
     lines = text.splitlines()
     out = []
+    replaced = False
     for line in lines:
-        if line.strip().startswith("| NDCG@10"):
-            out.append(f"| NDCG@10 | {pop_ndcg:.4f} | {cf_ndcg:.4f} |")
+        if line.strip().startswith("Single-run sanity check"):
+            out.append(
+                f"Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10): "
+                f"NDCG@10 popularity {pop_ndcg:.4f}, collaborative filtering {cf_ndcg:.4f}"
+            )
+            replaced = True
         else:
             out.append(line)
+    if not replaced:
+        out.append(
+            f"Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10): "
+            f"NDCG@10 popularity {pop_ndcg:.4f}, collaborative filtering {cf_ndcg:.4f}"
+        )
     README_PATH.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--database-url", default=os.getenv("DATABASE_URL"))
+    parser.add_argument(
+        "--database-url",
+        default=os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket"),
+    )
     parser.add_argument("--sample-mod", type=int, default=200)
     parser.add_argument("--candidate-size", type=int, default=2000)
     parser.add_argument("--k", type=int, default=10)
@@ -36,9 +49,6 @@ def main():
     parser.add_argument("--train-end", default="2015-06-01")
     parser.add_argument("--val-end", default="2015-06-15")
     args = parser.parse_args()
-
-    if not args.database_url:
-        raise SystemExit("DATABASE_URL not set. Use --database-url or export DATABASE_URL.")
 
     os.environ["DATABASE_URL"] = args.database_url
 

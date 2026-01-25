@@ -36,6 +36,17 @@ def event_time_range(path: Path):
     return min_ts, max_ts
 
 
+def event_entity_counts(path: Path):
+    users = set()
+    items = set()
+    with path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            users.add(row["visitorid"])
+            items.add(row["itemid"])
+    return len(users), len(items)
+
+
 def main():
     files = [
         DATA_DIR / "events.csv",
@@ -57,9 +68,14 @@ def main():
 
     events_path = DATA_DIR / "events.csv"
     min_ts, max_ts = event_time_range(events_path)
+    users, items = event_entity_counts(events_path)
     fingerprint["events_time_range_ms"] = {
         "min": min_ts,
         "max": max_ts,
+    }
+    fingerprint["events_entities"] = {
+        "unique_users": users,
+        "unique_items": items,
     }
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

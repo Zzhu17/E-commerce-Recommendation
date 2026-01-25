@@ -3,15 +3,15 @@ services:
     image: postgres:16
     container_name: conversionops-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: rocket
+      POSTGRES_PASSWORD: Zzp990812
       POSTGRES_DB: rocket
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - conversionops_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d rocket"]
+      test: ["CMD-SHELL", "pg_isready -U rocket -d rocket"]
       interval: 10s
       timeout: 5s
       retries: 5
