@@ -73,7 +73,7 @@ Robustness grid: K ∈ {5,10,20}, candidate pool ∈ {1k,2k,5k}, and 3 sampling 
 | Metric | Popularity Baseline | Collaborative Filtering |
 | --- | --- | --- |
 | Hit@K (avg) | 0.2183 | 0.0000 |
-| NDCG@K (avg) | 0.0755 | 0.0000 |
+| NDCG@10 (single) | 0.0944 | 0.0000 |
 | Coverage@K (avg) | 0.0070 | 0.0210 |
 | Diversity@K (avg) | 0.5574 | 0.9006 |
 
@@ -86,7 +86,7 @@ Interleaving check (popularity vs hybrid) shows lower NDCG@10 for the interleave
 (0.0334) than popularity (0.0944) in the current sample, indicating hybrid needs stronger
 personalization signals before deployment.
 
-Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10): NDCG@10 popularity 0.0944, collaborative filtering 0.0000
+Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10): NDCG@10
 popularity 0.0944, collaborative filtering 0.0000
 
 ## Trade-offs & Observations
