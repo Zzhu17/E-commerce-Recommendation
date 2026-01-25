@@ -86,6 +86,9 @@ Interleaving check (popularity vs hybrid) shows lower NDCG@10 for the interleave
 (0.0334) than popularity (0.0944) in the current sample, indicating hybrid needs stronger
 personalization signals before deployment.
 
+Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10):
+- NDCG@10: popularity 0.0944, collaborative filtering 0.0000
+
 ## Trade-offs & Observations
 - Better coverage/diversity can come at the cost of lower Hit@K
 - This highlights the balance between recommendation accuracy and exploration
@@ -102,6 +105,7 @@ personalization signals before deployment.
 ## Reproducibility
 Data load:
 - `src/data/load_rocket_postgres.py`
+- Legacy MySQL loader (deprecated): `legacy/load_data_to_mysql.py`
 
 Offline evaluation:
 ```bash
