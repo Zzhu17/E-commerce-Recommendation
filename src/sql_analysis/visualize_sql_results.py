@@ -6,14 +6,9 @@ import seaborn as sns
 from sqlalchemy import create_engine
 import os
 
-# ✅ 用 SQLAlchemy 建立连接
-user = "root"
-password = "Zzp990812"  # ❗修改为你的 MySQL 密码
-host = "localhost"
-port = 3306
-database = "ecommerce_db"
-
-engine = create_engine(f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}")
+# ✅ 用 SQLAlchemy 建立连接（PostgreSQL only）
+db_url = os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket")
+engine = create_engine(db_url)
 
 # ✅ 准备查询语句
 queries = {

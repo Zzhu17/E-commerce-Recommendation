@@ -105,7 +105,6 @@ Single-run sanity check (seed=42, sample_mod=200, candidate_size=2000, K=10):
 ## Reproducibility
 Data load:
 - `src/data/load_rocket_postgres.py`
-- Legacy MySQL loader (deprecated): `legacy/load_data_to_mysql.py`
 
 Offline evaluation:
 ```bash

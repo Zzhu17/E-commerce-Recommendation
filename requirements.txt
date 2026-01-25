@@ -8,7 +8,6 @@ joblib
 jupyter
 notebook
 ipykernel
-mysql-connector-python
 sqlalchemy
 psycopg2-binary
 pyyaml
