@@ -23,6 +23,7 @@ def summarize(df: pd.DataFrame) -> dict:
     )
 
     hit_wins = (pivot["hit_at_k"]["popularity"] > pivot["hit_at_k"]["user_cf"]).mean()
+    ndcg_wins = (pivot["ndcg_at_k"]["user_cf"] > pivot["ndcg_at_k"]["popularity"]).mean()
     cov_wins = (pivot["coverage_at_k"]["user_cf"] > pivot["coverage_at_k"]["popularity"]).mean()
     div_wins = (pivot["diversity_at_k"]["user_cf"] > pivot["diversity_at_k"]["popularity"]).mean()
 
@@ -40,6 +41,7 @@ def summarize(df: pd.DataFrame) -> dict:
         "hit_wins_ratio": float(hit_wins),
         "coverage_wins_ratio": float(cov_wins),
         "diversity_wins_ratio": float(div_wins),
+        "ndcg_wins_ratio": float(ndcg_wins),
         "hit_gap_mean": float(hit_gap.mean()),
         "hit_gap_std": float(hit_gap.std()),
         "ndcg_gap_mean": float(ndcg_gap.mean()),
@@ -147,6 +149,7 @@ def main(run_id=None):
         "",
         "## Overall comparisons",
         f"- Popularity Hit@K higher in {summary['hit_wins_ratio']:.1%} of configs",
+        f"- User_CF NDCG@K higher in {summary['ndcg_wins_ratio']:.1%} of configs",
         f"- User_CF Coverage higher in {summary['coverage_wins_ratio']:.1%} of configs",
         f"- User_CF Diversity higher in {summary['diversity_wins_ratio']:.1%} of configs",
         "",

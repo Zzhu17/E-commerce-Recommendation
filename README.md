@@ -38,10 +38,19 @@ This reflects a common early-stage evaluation process in real-world recommendati
 - Same recommendation list for all users
 - Serves as a simple, interpretable benchmark
 
+### Baseline: Time-Decayed Popularity
+- Items ranked by recency-weighted interaction frequency
+- Prioritizes recent trends over older interactions
+
 ### Model: Collaborative Filtering (User-Based)
 - Learns user-item interaction patterns
 - Produces personalized recommendation lists
 - Captures latent preferences beyond popularity bias
+
+### Hybrid Decision Rule (Segmented)
+- cold users -> popularity
+- light users -> time-decayed popularity
+- heavy users -> user_cf
 
 ## Evaluation Metrics (Offline Proxies)
 Given the offline setting, the following metrics are used as business-aligned proxies:
@@ -55,22 +64,27 @@ These metrics serve as proxies for online engagement, product discovery, and exp
 
 ## Results Summary (Sampled Offline Evaluation)
 Configuration:
-- Sample filter: user_id % 200 == 0
-- Top items considered: 2000
-- K = 10
+- Temporal split with sampled users (sample_mod in {50,100,200})
+- Candidate pool in {1k,2k,5k}
+- K in {5,10,20}
 
 Robustness grid: K ∈ {5,10,20}, candidate pool ∈ {1k,2k,5k}, and 3 sampling ratios, with bootstrap CIs and stability across 81 configurations.
 
 | Metric | Popularity Baseline | Collaborative Filtering |
 | --- | --- | --- |
-| Hit@10 | 0.0185 | 0.0093 |
-| Coverage | 0.0050 | 0.0275 |
-| Diversity | 0.8000 | 0.8843 |
+| Hit@K (avg) | 0.2183 | 0.0000 |
+| NDCG@K (avg) | 0.0755 | 0.0000 |
+| Coverage@K (avg) | 0.0070 | 0.0210 |
+| Diversity@K (avg) | 0.5574 | 0.9006 |
 
 The collaborative filtering model increases coverage and diversity, indicating broader catalog
-exposure, while underperforming the popularity baseline on Hit@K in this sample. This suggests
-that popularity remains a strong baseline on sparse interaction data and that personalization
-may require richer signals or hybrid strategies.
+exposure, while underperforming the popularity baseline on Hit@K and NDCG@10 in this sample.
+This suggests that popularity remains a strong baseline on sparse interaction data and that
+personalization may require richer signals or hybrid strategies.
+
+Interleaving check (popularity vs hybrid) shows lower NDCG@10 for the interleaved list
+(0.0334) than popularity (0.0944) in the current sample, indicating hybrid needs stronger
+personalization signals before deployment.
 
 ## Trade-offs & Observations
 - Better coverage/diversity can come at the cost of lower Hit@K
@@ -91,7 +105,7 @@ Data load:
 
 Offline evaluation:
 ```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rocket"
+export DATABASE_URL="postgresql://rocket:Zzp990812@localhost:5434/rocket"
 RECO_SAMPLE_MOD=200 python src/models/evaluate_recommender_offline.py
 ```
 
@@ -99,6 +113,10 @@ Outputs:
 - `output/recommendation_metrics.csv`
 - `docs/recommendation_results.md`
 - `ecommerce-recommend.pdf` (Power BI dashboard screenshots)
+- `docs/ground_truth.md`
+- `artifacts/data_fingerprint.json`
+- `artifacts/experiments/interleaving_results.csv`
+- `artifacts/experiments/20260125_102952/` (latest grid run artifacts)
 
 ## Experiment Framework (DS)
 Batch experiments generate a full artifact bundle per run:
@@ -126,6 +144,14 @@ python experiments/data_diagnostics.py
 Artifacts:
 - `docs/data_diagnostics.md`
 - `docs/online_hypotheses.md`
+- `docs/ground_truth.md`
+
+Step 3 extras:
+```bash
+python experiments/single_eval.py
+python experiments/data_fingerprint.py
+python experiments/interleaving_eval.py
+```
 
 
 ## Step 2 (Evaluation Upgrade)

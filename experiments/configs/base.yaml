@@ -23,11 +23,19 @@ eval:
 models:
   - name: "popularity"
     params: {}
+  - name: "time_decay_popularity"
+    params:
+      half_life_days: 14
   - name: "user_cf"
     params:
       similarity: "cosine"
       min_common_items: 2
       top_neighbors: 50
+  - name: "hybrid_rule"
+    params:
+      cold: "popularity"
+      light: "time_decay_popularity"
+      heavy: "user_cf"
 
 repro:
   seed: 42

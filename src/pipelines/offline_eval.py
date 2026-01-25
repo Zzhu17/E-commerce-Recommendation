@@ -11,6 +11,7 @@ from src.data.split import temporal_split
 from src.evaluation.bootstrap import bootstrap_ci
 from src.evaluation.metrics import coverage_at_k, diversity_at_k, hit_at_k, ndcg_at_k
 from src.recommenders.popularity import fit_popularity, recommend_popularity
+from src.recommenders.time_decay_popularity import fit_time_decay_popularity
 from src.recommenders.user_cf import build_matrix, recommend_user_cf
 
 
@@ -84,7 +85,7 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
     t0 = time.time()
     df = load_interactions(config.sample_mod, config.val_end)
     train_df, test_df = temporal_split(df, config.train_end, config.val_end)
-    train_df = train_df[["user_id", "product_id"]].dropna()
+    train_df = train_df[["user_id", "product_id", "event_ts"]].dropna()
     test_df = test_df[["user_id", "product_id"]].dropna()
 
     train_df, test_df, candidate_items = filter_candidates(
@@ -106,12 +107,24 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
     metrics = []
     segment_metrics = []
 
+    cached_recs = {}
     for model_cfg in config.models:
         model_name = model_cfg["name"]
         start_train = time.time()
 
         if model_name == "popularity":
             ranked_items = fit_popularity(train_df, candidate_items)
+            train_seconds = time.time() - start_train
+            start_infer = time.time()
+            recs = recommend_popularity(users, ranked_items, config.k)
+            infer_seconds = time.time() - start_infer
+        elif model_name == "time_decay_popularity":
+            ranked_items = fit_time_decay_popularity(
+                train_df,
+                candidate_items,
+                train_end=config.train_end,
+                half_life_days=model_cfg.get("params", {}).get("half_life_days", 14),
+            )
             train_seconds = time.time() - start_train
             start_infer = time.time()
             recs = recommend_popularity(users, ranked_items, config.k)
@@ -129,8 +142,23 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
                 top_neighbors=model_cfg.get("params", {}).get("top_neighbors", 50),
             )
             infer_seconds = time.time() - start_infer
+        elif model_name == "hybrid_rule":
+            rule = model_cfg.get("params", {})
+            recs = {}
+            start_infer = time.time()
+            for user_id in users:
+                segment = user_segments.get(user_id, "cold")
+                model_for_user = rule.get(segment, "popularity")
+                source = cached_recs.get(model_for_user)
+                if source is None:
+                    raise ValueError(f"Hybrid rule missing cached model: {model_for_user}")
+                recs[user_id] = source.get(user_id, [])
+            train_seconds = time.time() - start_train
+            infer_seconds = time.time() - start_infer
         else:
             raise ValueError(f"Unknown model: {model_name}")
+
+        cached_recs[model_name] = recs
 
         hit = hit_at_k(y_true, recs, config.k)
         ndcg = ndcg_at_k(y_true, recs, config.k)

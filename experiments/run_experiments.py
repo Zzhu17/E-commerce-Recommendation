@@ -69,6 +69,10 @@ def main():
     base_cfg = load_yaml(base_path)
     grid_cfg = load_yaml(grid_path)
 
+    override_sample_mod = os.getenv("RECO_SAMPLE_MOD_OVERRIDE")
+    if override_sample_mod:
+        grid_cfg["grid"]["sample_mod"] = [int(override_sample_mod)]
+
     run_id = base_cfg["experiment"].get("run_id") or datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     out_dir = ARTIFACTS_DIR / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -126,6 +130,11 @@ def main():
         seg_df = pd.DataFrame(segment_results)
         seg_df.to_csv(out_dir / "segment_results.csv", index=False)
 
+    fingerprint_path = REPO_ROOT / "artifacts" / "data_fingerprint.json"
+    fingerprint = None
+    if fingerprint_path.exists():
+        fingerprint = json.loads(fingerprint_path.read_text(encoding="utf-8"))
+
     manifest = {
         "run_id": run_id,
         "timestamp": timestamp,
@@ -133,6 +142,7 @@ def main():
         "base_config": base_cfg,
         "grid_config": grid_cfg,
         "python": os.sys.version,
+        "data_fingerprint": fingerprint,
     }
     with (out_dir / "manifest.json").open("w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
