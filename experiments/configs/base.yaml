@@ -1,0 +1,33 @@
+experiment:
+  name: "offline_robustness"
+  run_id: null
+  n_jobs: 1
+  save_parquet: true
+
+data:
+  dataset: "retailrocket"
+  temporal_split:
+    train_end: "2015-06-01"
+    val_end: "2015-06-15"
+  sample_mod: 200
+  candidate_size: 2000
+
+eval:
+  k: 10
+  metrics: ["hit", "ndcg", "coverage", "diversity"]
+  bootstrap:
+    enabled: true
+    n_resamples: 300
+    unit: "user"
+
+models:
+  - name: "popularity"
+    params: {}
+  - name: "user_cf"
+    params:
+      similarity: "cosine"
+      min_common_items: 2
+      top_neighbors: 50
+
+repro:
+  seed: 42

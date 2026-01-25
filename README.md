@@ -47,6 +47,7 @@ This reflects a common early-stage evaluation process in real-world recommendati
 Given the offline setting, the following metrics are used as business-aligned proxies:
 
 - Hit@K: whether a relevant item appears in the top-K recommendations
+- NDCG@K: rewards higher-ranked hits, closer to online ranking quality
 - Coverage: proportion of unique items recommended across all users
 - Diversity: average category variety within each user's top-K list
 
@@ -57,6 +58,8 @@ Configuration:
 - Sample filter: user_id % 200 == 0
 - Top items considered: 2000
 - K = 10
+
+Robustness grid: K ∈ {5,10,20}, candidate pool ∈ {1k,2k,5k}, and 3 sampling ratios, with bootstrap CIs and stability across 81 configurations.
 
 | Metric | Popularity Baseline | Collaborative Filtering |
 | --- | --- | --- |
@@ -96,3 +99,43 @@ Outputs:
 - `output/recommendation_metrics.csv`
 - `docs/recommendation_results.md`
 - `ecommerce-recommend.pdf` (Power BI dashboard screenshots)
+
+## Experiment Framework (DS)
+Batch experiments generate a full artifact bundle per run:
+- `artifacts/experiments/<run_id>/results.parquet`
+- `artifacts/experiments/<run_id>/results.csv`
+- `artifacts/experiments/<run_id>/summary.md`
+- `artifacts/experiments/<run_id>/plots/*.png`
+- `artifacts/experiments/<run_id>/manifest.json`
+
+Config templates:
+- `experiments/configs/base.yaml`
+- `experiments/configs/grid_small.yaml`
+
+Run a grid:
+```bash
+python experiments/run_experiments.py
+python experiments/summarize_results.py
+```
+
+Step 2 diagnostics and hypotheses:
+```bash
+python experiments/data_diagnostics.py
+```
+
+Artifacts:
+- `docs/data_diagnostics.md`
+- `docs/online_hypotheses.md`
+
+
+## Step 2 (Evaluation Upgrade)
+- Added ranking quality metric: NDCG@K
+- Added user segmentation: cold (1-2), light (3-10), heavy (11+)
+- Added diagnostics: sparsity + long-tail plots
+- Added online hypotheses for A/B validation
+
+Run diagnostics:
+```bash
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rocket"
+python experiments/data_diagnostics.py
+```
