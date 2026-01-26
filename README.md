@@ -63,12 +63,9 @@ Given the offline setting, the following metrics are used as business-aligned pr
 These metrics serve as proxies for online engagement, product discovery, and exploration.
 
 ## Results Summary (Sampled Offline Evaluation)
-Configuration:
-- Temporal split with sampled users (sample_mod in {50,100,200})
-- Candidate pool in {1k,2k,5k}
-- K in {5,10,20}
-
-Robustness grid: K ∈ {5,10,20}, candidate pool ∈ {1k,2k,5k}, and 3 sampling ratios, with bootstrap CIs and stability across 81 configurations.
+Configuration: temporal split with sampled users (sample_mod in {50,100,200}), candidate pool in
+{1k,2k,5k}, K in {5,10,20}. Robustness grid includes bootstrap CIs and stability across 81
+configurations.
 
 | Metric | Popularity Baseline | Collaborative Filtering |
 | --- | --- | --- |
@@ -163,11 +160,10 @@ python experiments/run_experiments.py
 python experiments/summarize_results.py
 ```
 
-Step 2 diagnostics and hypotheses:
+Diagnostics and hypotheses:
 ```bash
 python experiments/data_diagnostics.py
 ```
-
 Artifacts:
 - `docs/data_diagnostics.md`
 - `docs/online_hypotheses.md`
@@ -178,17 +174,4 @@ Step 3 extras:
 python experiments/single_eval.py
 python experiments/data_fingerprint.py
 python experiments/interleaving_eval.py
-```
-
-
-## Step 2 (Evaluation Upgrade)
-- Added ranking quality metric: NDCG@K
-- Added user segmentation: cold (1-2), light (3-10), heavy (11+)
-- Added diagnostics: sparsity + long-tail plots
-- Added online hypotheses for A/B validation
-
-Run diagnostics:
-```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rocket"
-python experiments/data_diagnostics.py
 ```
