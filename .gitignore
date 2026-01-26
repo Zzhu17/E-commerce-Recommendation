@@ -23,6 +23,9 @@ veer/
 # Output images
 output/**/*.png
 
+# Artifacts
+artifacts/models/
+
 # MacOS
 .DS_Store
 
