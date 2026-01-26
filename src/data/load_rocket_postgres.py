@@ -1,10 +1,14 @@
 import os
 from pathlib import Path
+
 import psycopg2
+
+from src.data.rocket_paths import resolve_rocket_data_dir
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SQL_DIR = REPO_ROOT / "sql" / "schema"
-DATA_DIR = REPO_ROOT / "data" / "rocket"
+
+DATA_DIR = resolve_rocket_data_dir()
 
 VIEW_SQL = REPO_ROOT / "sql" / "analytics" / "dashboard_views.sql"
 

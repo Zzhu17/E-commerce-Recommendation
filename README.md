@@ -105,6 +105,12 @@ Quickstart (DB + schema + data):
 ./scripts/bootstrap_postgres.sh
 ```
 
+Dataset download (optional):
+```bash
+python -c "import kagglehub; print(kagglehub.dataset_download('retailrocket/ecommerce-dataset'))"
+```
+If the dataset is stored elsewhere, set `ROCKET_DATA_DIR=/path/to/retailrocket`.
+
 Data load:
 - `src/data/load_rocket_postgres.py`
 

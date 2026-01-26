@@ -1,11 +1,17 @@
 import csv
 import hashlib
+import os
+import sys
 from pathlib import Path
 
 import json
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = REPO_ROOT / "data" / "rocket"
+sys.path.insert(0, str(REPO_ROOT))
+
+from src.data.rocket_paths import resolve_rocket_data_dir
+
+DATA_DIR = resolve_rocket_data_dir()
 OUTPUT_PATH = REPO_ROOT / "artifacts" / "data_fingerprint.json"
 
 

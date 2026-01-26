@@ -16,3 +16,4 @@ pytest
 torch
 implicit
 scipy
+kagglehub
