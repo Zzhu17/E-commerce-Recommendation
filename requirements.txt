@@ -17,3 +17,5 @@ torch
 implicit
 scipy
 kagglehub
+great_expectations
+boto3
