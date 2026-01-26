@@ -1,15 +1,18 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
 import psycopg2
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
 from src.data.split import temporal_split
 from src.data.graph import build_mappings, build_train_edges
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 MAPPINGS_DIR = ARTIFACTS_DIR / "mappings"
 GRAPH_DIR = ARTIFACTS_DIR / "graph"
@@ -40,9 +43,8 @@ def main():
     if df.empty:
         raise RuntimeError("No interactions loaded. Check DATABASE_URL or sampling filter.")
 
-    train_df, test_df = temporal_split(df, args.train_end, args.val_end)
+    train_df, _ = temporal_split(df, args.train_end, args.val_end)
     train_df = train_df[["user_id", "product_id", "event_ts"]].dropna()
-    test_df = test_df[["user_id", "product_id"]].dropna()
 
     users = sorted(train_df["user_id"].unique().tolist())
     items = sorted(train_df["product_id"].unique().tolist())

@@ -34,7 +34,7 @@ def fit_als(user_items: csr_matrix, config: ALSConfig) -> implicit.als.Alternati
         regularization=config.regularization,
         iterations=config.iterations,
     )
-    model.fit(user_items.T)
+    model.fit(user_items.T.tocsr())
     return model
 
 
