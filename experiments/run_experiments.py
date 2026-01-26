@@ -62,7 +62,7 @@ def config_to_eval(cfg: dict) -> EvalConfig:
 def main():
     if not os.getenv("DATABASE_URL"):
         print("DATABASE_URL is not set. Example:")
-        print("export DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/rocket\"")
+        print("export DATABASE_URL=\"postgresql://rocket:Zzp990812@localhost:5434/rocket\"")
         return
     base_path = REPO_ROOT / "experiments" / "configs" / "base.yaml"
     grid_path = REPO_ROOT / "experiments" / "configs" / "grid_small.yaml"

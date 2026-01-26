@@ -11,7 +11,7 @@ DOC_PATH = REPO_ROOT / "docs" / "data_diagnostics.md"
 
 
 def load_counts():
-    db_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rocket")
+    db_url = os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket")
     with psycopg2.connect(db_url) as conn:
         user_counts = pd.read_sql_query(
             """

@@ -29,7 +29,7 @@ class EvalConfig:
 
 
 def load_interactions(sample_mod: int, val_end: str) -> pd.DataFrame:
-    db_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rocket")
+    db_url = os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket")
     sql = f"""
         SELECT user_id, product_id, event_ts
         FROM analytics.fact_events
@@ -45,7 +45,7 @@ def load_interactions(sample_mod: int, val_end: str) -> pd.DataFrame:
 def load_categories(item_ids: List[int]) -> Dict[int, int]:
     if not item_ids:
         return {}
-    db_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rocket")
+    db_url = os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket")
     items_csv = ",".join(str(int(item_id)) for item_id in item_ids)
     sql = f"""
         SELECT product_id, category_id

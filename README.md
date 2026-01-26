@@ -114,7 +114,7 @@ Data load:
 Offline evaluation:
 ```bash
 export DATABASE_URL="postgresql://rocket:Zzp990812@localhost:5434/rocket"
-RECO_SAMPLE_MOD=200 python src/models/evaluate_recommender_offline.py
+RECO_SAMPLE_MOD=200 python experiments/single_eval.py
 ```
 
 Outputs:
