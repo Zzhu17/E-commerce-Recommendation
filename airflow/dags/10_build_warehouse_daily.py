@@ -12,6 +12,7 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
     default_args={"owner": "data"},
+    sla_miss_callback=lambda *args, **kwargs: None,
 ) as dag:
     build = BashOperator(
         task_id="build_stg_and_marts",

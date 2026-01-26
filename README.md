@@ -148,6 +148,15 @@ Step 3: Sanity check + interleaving + reproducibility
 - Graph/mappings: `DATABASE_URL=... python experiments/build_graph.py`
 - Event weighting toggle: set `eval.event_weighting: true` in `experiments/configs/base.yaml`
 
+## DE Pipeline (Airflow)
+Airflow DAGs:
+- `00_ingest_raw_kaggle_daily`
+- `10_build_warehouse_daily`
+- `20_train_eval_publish_daily`
+
+Backfill:
+- See `docs/de_backfill.md`
+
 ## Experiment Framework (DS)
 Batch experiments generate a full artifact bundle per run:
 - `artifacts/experiments/<run_id>/results.parquet`

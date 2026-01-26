@@ -13,6 +13,7 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
     default_args={"owner": "data"},
+    sla_miss_callback=lambda *args, **kwargs: None,
 ) as dag:
     download = BashOperator(
         task_id="download_kaggle",
