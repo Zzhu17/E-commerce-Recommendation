@@ -20,8 +20,8 @@ def main():
     cfg = EvalConfig(
         train_end="2015-06-01",
         val_end="2015-06-15",
-        sample_mod=2000,
-        candidate_size=500,
+        sample_mod=500,
+        candidate_size=1000,
         k=5,
         seed=42,
         bootstrap_enabled=False,

@@ -2,7 +2,7 @@ import os
 import math
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import pandas as pd
 import psycopg2
@@ -32,8 +32,8 @@ class EvalConfig:
     bootstrap_enabled: bool
     bootstrap_resamples: int
     models: List[dict]
-    run_id: str | None = None
-    output_dir: str | None = None
+    run_id: Optional[str] = None
+    output_dir: Optional[str] = None
     event_weighting: bool = False
 
 

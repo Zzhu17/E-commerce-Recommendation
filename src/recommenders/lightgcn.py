@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import numpy as np
 import torch
@@ -20,7 +20,7 @@ class LightGCNConfig:
     epochs: int = 50
     reg: float = 1e-4
     seed: int = 42
-    device: str | None = None
+    device: Optional[str] = None
     eval_k: int = 10
     eval_every: int = 5
     patience: int = 5
@@ -101,7 +101,7 @@ def train_lightgcn(
     num_users: int,
     num_items: int,
     config: LightGCNConfig,
-    val_y_true: Dict[int, set] | None = None,
+    val_y_true: Optional[Dict[int, set]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
