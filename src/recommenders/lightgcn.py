@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from torch import nn
 
+from src.evaluation.metrics import ndcg_at_k
+
 
 @dataclass
 class LightGCNConfig:
@@ -19,6 +21,10 @@ class LightGCNConfig:
     reg: float = 1e-4
     seed: int = 42
     device: str | None = None
+    eval_k: int = 10
+    eval_every: int = 5
+    patience: int = 5
+    score_batch: int = 512
 
 
 class LightGCN(nn.Module):
@@ -89,6 +95,7 @@ def train_lightgcn(
     num_users: int,
     num_items: int,
     config: LightGCNConfig,
+    val_y_true: Dict[int, set] | None = None,
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -103,7 +110,12 @@ def train_lightgcn(
     items = edges[:, 1].astype(np.int64)
     idx = np.arange(len(edges))
 
-    for _ in range(config.epochs):
+    best_ndcg = -1.0
+    best_user_emb = None
+    best_item_emb = None
+    patience_left = config.patience
+
+    for epoch in range(1, config.epochs + 1):
         np.random.shuffle(idx)
         for start in range(0, len(idx), config.batch_size):
             batch_idx = idx[start : start + config.batch_size]
@@ -130,11 +142,35 @@ def train_lightgcn(
             loss.backward()
             optimizer.step()
 
-    user_emb, item_emb = model()
-    user_emb = user_emb.detach().cpu().numpy()
-    item_emb = item_emb.detach().cpu().numpy()
-    metrics = {"device": str(device)}
-    return user_emb, item_emb, metrics
+        if val_y_true and config.eval_every and epoch % config.eval_every == 0:
+            user_emb_eval, item_emb_eval = model()
+            user_emb_np = user_emb_eval.detach().cpu().numpy()
+            item_emb_np = item_emb_eval.detach().cpu().numpy()
+            recs = recommend_lightgcn(
+                user_emb_np,
+                item_emb_np,
+                user_pos,
+                config.eval_k,
+                batch_size=config.score_batch,
+            )
+            ndcg = ndcg_at_k(val_y_true, recs, config.eval_k)
+            if ndcg > best_ndcg + 1e-6:
+                best_ndcg = ndcg
+                best_user_emb = user_emb_np
+                best_item_emb = item_emb_np
+                patience_left = config.patience
+            else:
+                patience_left -= 1
+                if patience_left <= 0:
+                    break
+
+    if best_user_emb is None or best_item_emb is None:
+        user_emb, item_emb = model()
+        best_user_emb = user_emb.detach().cpu().numpy()
+        best_item_emb = item_emb.detach().cpu().numpy()
+
+    metrics = {"device": str(device), "best_ndcg": best_ndcg, "stopped_epoch": epoch}
+    return best_user_emb, best_item_emb, metrics
 
 
 def recommend_lightgcn(

@@ -57,7 +57,7 @@ def build_grid(base_cfg: dict, grid_cfg: dict):
         yield cfg
 
 
-def config_to_eval(cfg: dict) -> EvalConfig:
+def config_to_eval(cfg: dict, run_id: str, out_dir: Path) -> EvalConfig:
     return EvalConfig(
         train_end=cfg["data"]["temporal_split"]["train_end"],
         val_end=cfg["data"]["temporal_split"]["val_end"],
@@ -68,6 +68,8 @@ def config_to_eval(cfg: dict) -> EvalConfig:
         bootstrap_enabled=cfg["eval"]["bootstrap"]["enabled"],
         bootstrap_resamples=cfg["eval"]["bootstrap"]["n_resamples"],
         models=cfg["models"],
+        run_id=run_id,
+        output_dir=str(out_dir),
     )
 
 
@@ -95,7 +97,7 @@ def main():
     results = []
     segment_results = []
     for cfg in build_grid(base_cfg, grid_cfg):
-        eval_cfg = config_to_eval(cfg)
+        eval_cfg = config_to_eval(cfg, run_id, out_dir)
         metrics, segment_metrics, timing = evaluate_config(eval_cfg)
         for row in metrics:
             results.append(

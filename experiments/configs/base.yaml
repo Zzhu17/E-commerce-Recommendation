@@ -45,6 +45,11 @@ models:
       lr: 1e-3
       batch_size: 2048
       epochs: 50
+      eval_k: 10
+      eval_every: 5
+      patience: 5
+      score_batch: 512
+      save_artifacts: false
   - name: "hybrid_rule"
     params:
       cold: "popularity"

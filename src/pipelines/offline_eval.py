@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 import psycopg2
+import numpy as np
 
 from src.data.split import temporal_split
 from src.data.graph import build_mappings, build_train_edges, build_user_pos
@@ -16,6 +17,8 @@ from src.recommenders.time_decay_popularity import fit_time_decay_popularity
 from src.recommenders.user_cf import build_matrix, recommend_user_cf
 from src.recommenders.lightgcn import LightGCNConfig, train_lightgcn, recommend_lightgcn
 from src.recommenders.als import ALSConfig, build_user_item_matrix, fit_als, recommend_als
+
+_LIGHTGCN_CACHE = {}
 
 
 @dataclass
@@ -29,6 +32,8 @@ class EvalConfig:
     bootstrap_enabled: bool
     bootstrap_resamples: int
     models: List[dict]
+    run_id: str | None = None
+    output_dir: str | None = None
 
 
 def load_interactions(sample_mod: int, val_end: str) -> pd.DataFrame:
@@ -184,8 +189,50 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
                 reg=model_cfg.get("params", {}).get("reg", 1e-4),
                 seed=config.seed,
                 device=model_cfg.get("params", {}).get("device"),
+                eval_k=model_cfg.get("params", {}).get("eval_k", config.k),
+                eval_every=model_cfg.get("params", {}).get("eval_every", 5),
+                patience=model_cfg.get("params", {}).get("patience", 5),
+                score_batch=model_cfg.get("params", {}).get("score_batch", 512),
             )
-            user_emb, item_emb, _ = train_lightgcn(edges, user_pos_idx, n_users, n_items, cfg)
+            val_y_true_idx = {}
+            for user_id, items in y_true.items():
+                u_idx = graph_mapping.user2idx.get(user_id)
+                if u_idx is None:
+                    continue
+                for item_id in items:
+                    i_idx = graph_mapping.item2idx.get(item_id)
+                    if i_idx is None:
+                        continue
+                    val_y_true_idx.setdefault(u_idx, set()).add(i_idx)
+
+            cache_key = (
+                config.train_end,
+                config.val_end,
+                config.sample_mod,
+                config.candidate_size,
+                config.seed,
+                cfg.embedding_dim,
+                cfg.num_layers,
+                cfg.lr,
+                cfg.batch_size,
+                cfg.num_neg,
+                cfg.epochs,
+                cfg.reg,
+            )
+            cached = _LIGHTGCN_CACHE.get(cache_key)
+            if cached:
+                user_emb, item_emb, train_meta = cached
+            else:
+                user_emb, item_emb, train_meta = train_lightgcn(
+                    edges,
+                    user_pos_idx,
+                    n_users,
+                    n_items,
+                    cfg,
+                    val_y_true=val_y_true_idx,
+                )
+                _LIGHTGCN_CACHE[cache_key] = (user_emb, item_emb, train_meta)
+
             train_seconds = time.time() - start_train
             start_infer = time.time()
             recs_idx = recommend_lightgcn(
@@ -193,11 +240,29 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
                 item_emb,
                 user_pos_idx,
                 config.k,
-                batch_size=model_cfg.get("params", {}).get("score_batch", 512),
+                batch_size=cfg.score_batch,
             )
             idx2item = graph_mapping.idx2item
             recs = {users[u_idx]: [idx2item[i_idx] for i_idx in items] for u_idx, items in recs_idx.items()}
             infer_seconds = time.time() - start_infer
+
+            if model_cfg.get("params", {}).get("save_artifacts") and config.output_dir:
+                from pathlib import Path
+                import json
+
+                out_dir = Path(config.output_dir) / "models" / "lightgcn"
+                out_dir.mkdir(parents=True, exist_ok=True)
+                np.save(out_dir / f"user_emb_seed{config.seed}.npy", user_emb)
+                np.save(out_dir / f"item_emb_seed{config.seed}.npy", item_emb)
+                meta = {
+                    "config": cfg.__dict__,
+                    "train_meta": train_meta,
+                    "cache_key": list(cache_key),
+                }
+                (out_dir / f"metrics_seed{config.seed}.json").write_text(
+                    json.dumps(meta, indent=2),
+                    encoding="utf-8",
+                )
         elif model_name == "hybrid_rule":
             rule = model_cfg.get("params", {})
             recs = {}

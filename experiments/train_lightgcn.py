@@ -44,6 +44,10 @@ def main():
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--reg", type=float, default=1e-4)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--eval-k", type=int, default=10)
+    parser.add_argument("--eval-every", type=int, default=5)
+    parser.add_argument("--patience", type=int, default=5)
+    parser.add_argument("--score-batch", type=int, default=512)
     parser.add_argument("--run-id", default=None)
     args = parser.parse_args()
 
@@ -51,14 +55,23 @@ def main():
     if df.empty:
         raise RuntimeError("No interactions loaded. Check DATABASE_URL or sampling filter.")
 
-    train_df, _ = temporal_split(df, args.train_end, args.val_end)
+    train_df, test_df = temporal_split(df, args.train_end, args.val_end)
     train_df = train_df[["user_id", "product_id", "event_ts"]].dropna()
+    test_df = test_df[["user_id", "product_id"]].dropna()
 
     users = sorted(train_df["user_id"].unique().tolist())
     items = sorted(train_df["product_id"].unique().tolist())
     mapping = build_mappings(users, items)
     edges = build_train_edges(train_df, mapping)
     user_pos = build_user_pos(edges)
+
+    val_y_true = {}
+    for _, row in test_df.iterrows():
+        u_idx = mapping.user2idx.get(row.user_id)
+        i_idx = mapping.item2idx.get(row.product_id)
+        if u_idx is None or i_idx is None:
+            continue
+        val_y_true.setdefault(u_idx, set()).add(i_idx)
 
     cfg = LightGCNConfig(
         embedding_dim=args.dim,
@@ -69,9 +82,20 @@ def main():
         epochs=args.epochs,
         reg=args.reg,
         seed=args.seed,
+        eval_k=args.eval_k,
+        eval_every=args.eval_every,
+        patience=args.patience,
+        score_batch=args.score_batch,
     )
 
-    user_emb, item_emb, metrics = train_lightgcn(edges, user_pos, len(users), len(items), cfg)
+    user_emb, item_emb, metrics = train_lightgcn(
+        edges,
+        user_pos,
+        len(users),
+        len(items),
+        cfg,
+        val_y_true=val_y_true,
+    )
 
     run_id = args.run_id or datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     out_dir = ARTIFACTS_DIR / run_id
