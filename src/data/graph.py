@@ -30,6 +30,16 @@ def build_train_edges(train_df: pd.DataFrame, mapping: GraphMapping) -> np.ndarr
     return edges.astype({"u_idx": int, "i_idx": int}).to_numpy()
 
 
+def build_train_edges_weighted(train_df: pd.DataFrame, mapping: GraphMapping) -> np.ndarray:
+    if "event_weight" not in train_df.columns:
+        raise ValueError("event_weight column not found for weighted edges.")
+    user_idx = train_df["user_id"].map(mapping.user2idx)
+    item_idx = train_df["product_id"].map(mapping.item2idx)
+    weights = train_df["event_weight"]
+    edges = pd.DataFrame({"u_idx": user_idx, "i_idx": item_idx, "weight": weights}).dropna()
+    return edges.astype({"u_idx": int, "i_idx": int, "weight": float}).to_numpy()
+
+
 def build_user_pos(edges: np.ndarray) -> Dict[int, set]:
     user_pos: Dict[int, set] = {}
     for u_idx, i_idx in edges:

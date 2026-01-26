@@ -139,6 +139,12 @@ Step 3: Sanity check + interleaving + reproducibility
 - Interleaving results: `artifacts/experiments/interleaving_results.csv`
 - Data fingerprint: `python experiments/data_fingerprint.py` (also embedded in `manifest.json`)
 
+## Modern Recommenders (LightGCN + ALS)
+- LightGCN training: `DATABASE_URL=... python experiments/train_lightgcn.py`
+- ALS baseline: `DATABASE_URL=... python experiments/train_als.py`
+- Graph/mappings: `DATABASE_URL=... python experiments/build_graph.py`
+- Event weighting toggle: set `eval.event_weighting: true` in `experiments/configs/base.yaml`
+
 ## Experiment Framework (DS)
 Batch experiments generate a full artifact bundle per run:
 - `artifacts/experiments/<run_id>/results.parquet`

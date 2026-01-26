@@ -55,10 +55,16 @@ def build_norm_adj(edges: np.ndarray, num_users: int, num_items: int, device: to
         raise ValueError("No edges provided for LightGCN.")
     users = torch.tensor(edges[:, 0], dtype=torch.long, device=device)
     items = torch.tensor(edges[:, 1], dtype=torch.long, device=device) + num_users
+    weights = None
+    if edges.shape[1] >= 3:
+        weights = torch.tensor(edges[:, 2], dtype=torch.float32, device=device)
     row = torch.cat([users, items])
     col = torch.cat([items, users])
     indices = torch.stack([row, col], dim=0)
-    values = torch.ones(indices.size(1), dtype=torch.float32, device=device)
+    if weights is None:
+        values = torch.ones(indices.size(1), dtype=torch.float32, device=device)
+    else:
+        values = torch.cat([weights, weights])
     n_nodes = num_users + num_items
     adj = torch.sparse_coo_tensor(indices, values, (n_nodes, n_nodes))
     deg = torch.sparse.sum(adj, dim=1).to_dense()

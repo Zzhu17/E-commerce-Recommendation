@@ -19,7 +19,10 @@ class ALSConfig:
 def build_user_item_matrix(edges: np.ndarray, num_users: int, num_items: int, alpha: float = 1.0) -> csr_matrix:
     if edges.size == 0:
         raise ValueError("No edges provided for ALS.")
-    data = np.ones(len(edges), dtype=np.float32) * alpha
+    if edges.shape[1] >= 3:
+        data = edges[:, 2].astype(np.float32) * alpha
+    else:
+        data = np.ones(len(edges), dtype=np.float32) * alpha
     user_idx = edges[:, 0].astype(np.int64)
     item_idx = edges[:, 1].astype(np.int64)
     return csr_matrix((data, (user_idx, item_idx)), shape=(num_users, num_items))

@@ -19,6 +19,7 @@ eval:
     enabled: true
     n_resamples: 300
     unit: "user"
+  event_weighting: false
 
 models:
   - name: "popularity"

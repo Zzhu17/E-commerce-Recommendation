@@ -70,6 +70,7 @@ def config_to_eval(cfg: dict, run_id: str, out_dir: Path) -> EvalConfig:
         models=cfg["models"],
         run_id=run_id,
         output_dir=str(out_dir),
+        event_weighting=cfg.get("eval", {}).get("event_weighting", False),
     )
 
 

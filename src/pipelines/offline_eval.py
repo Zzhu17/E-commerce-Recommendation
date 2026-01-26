@@ -9,7 +9,7 @@ import psycopg2
 import numpy as np
 
 from src.data.split import temporal_split
-from src.data.graph import build_mappings, build_train_edges, build_user_pos
+from src.data.graph import build_mappings, build_train_edges, build_train_edges_weighted, build_user_pos
 from src.evaluation.bootstrap import bootstrap_ci
 from src.evaluation.metrics import coverage_at_k, diversity_at_k, hit_at_k, ndcg_at_k
 from src.recommenders.popularity import fit_popularity, recommend_popularity
@@ -34,12 +34,13 @@ class EvalConfig:
     models: List[dict]
     run_id: str | None = None
     output_dir: str | None = None
+    event_weighting: bool = False
 
 
-def load_interactions(sample_mod: int, val_end: str) -> pd.DataFrame:
+def load_interactions(sample_mod: int, val_end: str, weighted: bool = False) -> pd.DataFrame:
     db_url = os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket")
     sql = f"""
-        SELECT user_id, product_id, event_ts
+        SELECT user_id, product_id, event_ts, event_type
         FROM analytics.fact_events
         WHERE event_type IN ('view', 'addtocart', 'transaction')
           AND user_id % {int(sample_mod)} = 0
@@ -47,7 +48,11 @@ def load_interactions(sample_mod: int, val_end: str) -> pd.DataFrame:
         ORDER BY user_id, event_ts
     """
     with psycopg2.connect(db_url) as conn:
-        return pd.read_sql_query(sql, conn)
+        df = pd.read_sql_query(sql, conn)
+    if weighted:
+        weights = {"view": 1.0, "addtocart": 2.0, "transaction": 3.0}
+        df["event_weight"] = df["event_type"].map(weights).fillna(1.0)
+    return df
 
 
 def load_categories(item_ids: List[int]) -> Dict[int, int]:
@@ -91,9 +96,12 @@ def filter_candidates(train_df: pd.DataFrame, test_df: pd.DataFrame, candidate_s
 
 def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
     t0 = time.time()
-    df = load_interactions(config.sample_mod, config.val_end)
+    df = load_interactions(config.sample_mod, config.val_end, weighted=config.event_weighting)
     train_df, test_df = temporal_split(df, config.train_end, config.val_end)
-    train_df = train_df[["user_id", "product_id", "event_ts"]].dropna()
+    train_cols = ["user_id", "product_id", "event_ts"]
+    if config.event_weighting:
+        train_cols.append("event_weight")
+    train_df = train_df[train_cols].dropna()
     test_df = test_df[["user_id", "product_id"]].dropna()
 
     train_df, test_df, candidate_items = filter_candidates(
@@ -125,7 +133,10 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
         nonlocal graph_mapping, edges, user_pos_idx, user_items
         if graph_mapping is None:
             graph_mapping = build_mappings(users, candidate_items)
-            edges = build_train_edges(train_df, graph_mapping)
+            if config.event_weighting:
+                edges = build_train_edges_weighted(train_df, graph_mapping)
+            else:
+                edges = build_train_edges(train_df, graph_mapping)
             user_pos_idx = build_user_pos(edges)
             user_items = build_user_item_matrix(edges, n_users, n_items)
     for model_cfg in config.models:
