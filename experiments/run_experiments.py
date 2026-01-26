@@ -42,6 +42,18 @@ def build_grid(base_cfg: dict, grid_cfg: dict):
                 cfg["data"][k] = v
             elif k == "seed":
                 cfg["repro"]["seed"] = v
+            elif k == "dim":
+                for model in cfg.get("models", []):
+                    if model.get("name") == "lightgcn":
+                        model.setdefault("params", {})["dim"] = v
+            elif k in ("layers", "num_layers"):
+                for model in cfg.get("models", []):
+                    if model.get("name") == "lightgcn":
+                        model.setdefault("params", {})["num_layers"] = v
+            elif k == "als_factors":
+                for model in cfg.get("models", []):
+                    if model.get("name") == "als":
+                        model.setdefault("params", {})["factors"] = v
         yield cfg
 
 

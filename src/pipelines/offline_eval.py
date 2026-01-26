@@ -8,11 +8,14 @@ import pandas as pd
 import psycopg2
 
 from src.data.split import temporal_split
+from src.data.graph import build_mappings, build_train_edges, build_user_pos
 from src.evaluation.bootstrap import bootstrap_ci
 from src.evaluation.metrics import coverage_at_k, diversity_at_k, hit_at_k, ndcg_at_k
 from src.recommenders.popularity import fit_popularity, recommend_popularity
 from src.recommenders.time_decay_popularity import fit_time_decay_popularity
 from src.recommenders.user_cf import build_matrix, recommend_user_cf
+from src.recommenders.lightgcn import LightGCNConfig, train_lightgcn, recommend_lightgcn
+from src.recommenders.als import ALSConfig, build_user_item_matrix, fit_als, recommend_als
 
 
 @dataclass
@@ -108,6 +111,18 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
     segment_metrics = []
 
     cached_recs = {}
+    graph_mapping = None
+    edges = None
+    user_pos_idx = None
+    user_items = None
+
+    def ensure_graph():
+        nonlocal graph_mapping, edges, user_pos_idx, user_items
+        if graph_mapping is None:
+            graph_mapping = build_mappings(users, candidate_items)
+            edges = build_train_edges(train_df, graph_mapping)
+            user_pos_idx = build_user_pos(edges)
+            user_items = build_user_item_matrix(edges, n_users, n_items)
     for model_cfg in config.models:
         model_name = model_cfg["name"]
         start_train = time.time()
@@ -141,6 +156,47 @@ def evaluate_config(config: EvalConfig) -> Tuple[List[dict], List[dict], dict]:
                 config.k,
                 top_neighbors=model_cfg.get("params", {}).get("top_neighbors", 50),
             )
+            infer_seconds = time.time() - start_infer
+        elif model_name == "als":
+            ensure_graph()
+            cfg = ALSConfig(
+                factors=model_cfg.get("params", {}).get("factors", 64),
+                regularization=model_cfg.get("params", {}).get("reg", 0.01),
+                iterations=model_cfg.get("params", {}).get("iterations", 30),
+                alpha=model_cfg.get("params", {}).get("alpha", 1.0),
+            )
+            als_model = fit_als(user_items, cfg)
+            train_seconds = time.time() - start_train
+            start_infer = time.time()
+            recs_idx = recommend_als(als_model, user_items, list(range(n_users)), config.k)
+            idx2item = graph_mapping.idx2item
+            recs = {users[u_idx]: [idx2item[i_idx] for i_idx in items] for u_idx, items in recs_idx.items()}
+            infer_seconds = time.time() - start_infer
+        elif model_name == "lightgcn":
+            ensure_graph()
+            cfg = LightGCNConfig(
+                embedding_dim=model_cfg.get("params", {}).get("dim", 64),
+                num_layers=model_cfg.get("params", {}).get("num_layers", 3),
+                lr=model_cfg.get("params", {}).get("lr", 1e-3),
+                batch_size=model_cfg.get("params", {}).get("batch_size", 2048),
+                num_neg=model_cfg.get("params", {}).get("num_neg", 1),
+                epochs=model_cfg.get("params", {}).get("epochs", 50),
+                reg=model_cfg.get("params", {}).get("reg", 1e-4),
+                seed=config.seed,
+                device=model_cfg.get("params", {}).get("device"),
+            )
+            user_emb, item_emb, _ = train_lightgcn(edges, user_pos_idx, n_users, n_items, cfg)
+            train_seconds = time.time() - start_train
+            start_infer = time.time()
+            recs_idx = recommend_lightgcn(
+                user_emb,
+                item_emb,
+                user_pos_idx,
+                config.k,
+                batch_size=model_cfg.get("params", {}).get("score_batch", 512),
+            )
+            idx2item = graph_mapping.idx2item
+            recs = {users[u_idx]: [idx2item[i_idx] for i_idx in items] for u_idx, items in recs_idx.items()}
             infer_seconds = time.time() - start_infer
         elif model_name == "hybrid_rule":
             rule = model_cfg.get("params", {})

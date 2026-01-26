@@ -3,3 +3,5 @@ grid:
   candidate_size: [1000, 2000, 5000]
   sample_mod: [50, 100, 200]
   seed: [42, 43, 44]
+  dim: [32, 64]
+  layers: [2, 3]

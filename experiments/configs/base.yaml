@@ -31,6 +31,20 @@ models:
       similarity: "cosine"
       min_common_items: 2
       top_neighbors: 50
+  - name: "als"
+    params:
+      factors: 64
+      reg: 0.01
+      iterations: 30
+      alpha: 1.0
+  - name: "lightgcn"
+    params:
+      dim: 64
+      num_layers: 3
+      num_neg: 1
+      lr: 1e-3
+      batch_size: 2048
+      epochs: 50
   - name: "hybrid_rule"
     params:
       cold: "popularity"
