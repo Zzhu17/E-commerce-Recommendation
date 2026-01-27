@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: stg_events
+    description: "Staging events"
+  - name: dim_user
+    description: "User dimension"
+  - name: dim_item
+    description: "Item dimension"
+  - name: fact_interactions_daily
+    description: "Daily interaction facts"

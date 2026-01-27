@@ -5,6 +5,8 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 
+from airflow.plugins.slack_callbacks import notify_slack
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -22,7 +24,7 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
     default_args={"owner": "ml"},
-    sla_miss_callback=lambda *args, **kwargs: None,
+    sla_miss_callback=notify_slack,
 ) as dag:
     snapshot = PythonOperator(
         task_id="build_snapshot",

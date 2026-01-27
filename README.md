@@ -151,6 +151,7 @@ Step 3: Sanity check + interleaving + reproducibility
 ## DE Pipeline (Airflow)
 Airflow DAGs:
 - `00_ingest_raw_kaggle_daily`
+- `05_bootstrap_minio_daily`
 - `10_build_warehouse_daily`
 - `20_train_eval_publish_daily`
 

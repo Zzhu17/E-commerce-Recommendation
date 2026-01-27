@@ -4,6 +4,8 @@ from pathlib import Path
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
+from airflow.plugins.slack_callbacks import notify_slack
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET = "retailrocket/ecommerce-dataset"
 
@@ -13,7 +15,7 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
     default_args={"owner": "data"},
-    sla_miss_callback=lambda *args, **kwargs: None,
+    sla_miss_callback=notify_slack,
 ) as dag:
     download = BashOperator(
         task_id="download_kaggle",

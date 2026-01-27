@@ -1,0 +1,13 @@
+ecommerce_reco:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      port: 5434
+      user: rocket
+      password: Zzp990812
+      dbname: rocket
+      schema: analytics
+      threads: 4
+      keepalives_idle: 0

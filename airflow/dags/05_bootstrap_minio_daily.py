@@ -9,23 +9,17 @@ from airflow.plugins.slack_callbacks import notify_slack
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 with DAG(
-    dag_id="10_build_warehouse_daily",
+    dag_id="05_bootstrap_minio_daily",
     start_date=datetime(2025, 1, 1),
     schedule_interval="@daily",
     catchup=False,
-    default_args={"owner": "data"},
+    default_args={"owner": "platform"},
     sla_miss_callback=notify_slack,
 ) as dag:
-    build = BashOperator(
-        task_id="build_stg_and_marts",
-        bash_command="python pipelines/warehouse/build_warehouse.py",
+    bootstrap = BashOperator(
+        task_id="bootstrap_minio_bucket",
+        bash_command="python pipelines/publish/bootstrap_minio.py",
         cwd=str(REPO_ROOT),
     )
 
-    dq_stg = BashOperator(
-        task_id="dq_stg",
-        bash_command="python pipelines/dq/run_ge.py --stage stg",
-        cwd=str(REPO_ROOT),
-    )
-
-    build >> dq_stg
+    bootstrap
