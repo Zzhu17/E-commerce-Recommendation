@@ -154,6 +154,7 @@ Airflow DAGs:
 - `05_bootstrap_minio_daily`
 - `10_build_warehouse_daily`
 - `20_train_eval_publish_daily`
+- `30_publish_candidates_daily`
 
 Backfill:
 - See `docs/de_backfill.md`

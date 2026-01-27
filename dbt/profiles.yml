@@ -3,11 +3,11 @@ ecommerce_reco:
   outputs:
     dev:
       type: postgres
-      host: localhost
-      port: 5434
-      user: rocket
-      password: Zzp990812
-      dbname: rocket
-      schema: analytics
+      host: {{ env_var('DBT_HOST', 'localhost') }}
+      port: {{ env_var('DBT_PORT', '5434') | int }}
+      user: {{ env_var('DBT_USER', 'rocket') }}
+      password: {{ env_var('DBT_PASSWORD', 'Zzp990812') }}
+      dbname: {{ env_var('DBT_DBNAME', 'rocket') }}
+      schema: {{ env_var('DBT_SCHEMA', 'analytics') }}
       threads: 4
       keepalives_idle: 0

@@ -9,23 +9,17 @@ from airflow.plugins.slack_callbacks import notify_slack, notify_failure
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 with DAG(
-    dag_id="10_build_warehouse_daily",
+    dag_id="30_publish_candidates_daily",
     start_date=datetime(2025, 1, 1),
     schedule_interval="@daily",
     catchup=False,
-    default_args={"owner": "data", "on_failure_callback": notify_failure},
+    default_args={"owner": "serving", "on_failure_callback": notify_failure},
     sla_miss_callback=notify_slack,
 ) as dag:
-    build = BashOperator(
-        task_id="build_stg_and_marts",
-        bash_command="python pipelines/warehouse/build_warehouse.py",
+    publish = BashOperator(
+        task_id="publish_candidates",
+        bash_command="python pipelines/publish/publish_candidates.py --run-id dummy --topk artifacts/user_topk.parquet",
         cwd=str(REPO_ROOT),
     )
 
-    dq_stg = BashOperator(
-        task_id="dq_stg",
-        bash_command="python pipelines/dq/run_ge.py --stage stg",
-        cwd=str(REPO_ROOT),
-    )
-
-    build >> dq_stg
+    publish

@@ -4,7 +4,7 @@ from pathlib import Path
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
-from airflow.plugins.slack_callbacks import notify_slack
+from airflow.plugins.slack_callbacks import notify_slack, notify_failure
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -13,7 +13,7 @@ with DAG(
     start_date=datetime(2025, 1, 1),
     schedule_interval="@daily",
     catchup=False,
-    default_args={"owner": "platform"},
+    default_args={"owner": "platform", "on_failure_callback": notify_failure},
     sla_miss_callback=notify_slack,
 ) as dag:
     bootstrap = BashOperator(
