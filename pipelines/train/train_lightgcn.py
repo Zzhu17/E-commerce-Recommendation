@@ -11,13 +11,14 @@ import psycopg2
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.recommenders.lightgcn import LightGCNConfig, train_lightgcn
+from src.recommenders.lightgcn import LightGCNConfig, train_lightgcn, recommend_lightgcn
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--snapshot-id", required=True)
     parser.add_argument("--database-url", default=os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket"))
+    parser.add_argument("--k", type=int, default=10)
     args = parser.parse_args()
 
     conn = psycopg2.connect(args.database_url)
@@ -52,6 +53,21 @@ def main():
         out_dir.mkdir(parents=True, exist_ok=True)
         np.save(out_dir / "user_emb.npy", user_emb)
         np.save(out_dir / "item_emb.npy", item_emb)
+        (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+        # build topK
+        recs = recommend_lightgcn(user_emb, item_emb, user_pos, args.k)
+        rows = []
+        for u_idx, items in recs.items():
+            for rank, i_idx in enumerate(items, 1):
+                rows.append({
+                    "user_id": int(u_idx),
+                    "rank": rank,
+                    "item_id": int(i_idx),
+                    "score": 0.0,
+                })
+        import pandas as pd
+        pd.DataFrame(rows).to_parquet(out_dir / "user_topk.parquet", index=False)
 
         with conn.cursor() as cur:
             cur.execute(Path("sql/ml/30_ml_tables.sql").read_text())

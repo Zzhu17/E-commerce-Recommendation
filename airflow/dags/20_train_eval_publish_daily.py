@@ -18,6 +18,15 @@ def build_snapshot(ds, **context):
     context["ti"].xcom_push(key="snapshot_id", value=snapshot_id)
 
 
+def train_lightgcn(task_id, **context):
+    import subprocess
+    snapshot_id = context["ti"].xcom_pull(task_ids="build_snapshot", key="snapshot_id")
+    cmd = ["python", "pipelines/train/train_lightgcn.py", "--snapshot-id", snapshot_id]
+    result = subprocess.check_output(cmd, cwd=str(REPO_ROOT), text=True)
+    run_id = result.strip().splitlines()[-1]
+    context["ti"].xcom_push(key="run_id", value=run_id)
+
+
 with DAG(
     dag_id="20_train_eval_publish_daily",
     start_date=datetime(2025, 1, 1),
@@ -38,10 +47,9 @@ with DAG(
         cwd=str(REPO_ROOT),
     )
 
-    train_lightgcn = BashOperator(
+    train_lgcn = PythonOperator(
         task_id="train_lightgcn",
-        bash_command="python pipelines/train/train_lightgcn.py --snapshot-id '{{ ti.xcom_pull(task_ids=\"build_snapshot\", key=\"snapshot_id\") }}'",
-        cwd=str(REPO_ROOT),
+        python_callable=train_lightgcn,
     )
 
     train_als = BashOperator(
@@ -52,8 +60,8 @@ with DAG(
 
     eval_run = BashOperator(
         task_id="eval_offline",
-        bash_command="python pipelines/eval/offline_eval.py --run-id dummy --snapshot-id '{{ ti.xcom_pull(task_ids=\"build_snapshot\", key=\"snapshot_id\") }}'",
+        bash_command="python pipelines/eval/offline_eval.py --run-id '{{ ti.xcom_pull(task_ids=\"train_lightgcn\", key=\"run_id\") }}' --snapshot-id '{{ ti.xcom_pull(task_ids=\"build_snapshot\", key=\"snapshot_id\") }}' --topk artifacts/{{ ti.xcom_pull(task_ids=\"train_lightgcn\", key=\"run_id\") }}/user_topk.parquet",
         cwd=str(REPO_ROOT),
     )
 
-    snapshot >> dq_edges >> [train_lightgcn, train_als] >> eval_run
+    snapshot >> dq_edges >> [train_lgcn, train_als] >> eval_run

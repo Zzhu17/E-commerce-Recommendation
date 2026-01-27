@@ -164,6 +164,9 @@ dbt (optional):
 dbt run --profiles-dir dbt --project-dir dbt
 ```
 
+Airflow variable:
+- `model_version` (used by `30_publish_candidates_daily`)
+
 ## Experiment Framework (DS)
 Batch experiments generate a full artifact bundle per run:
 - `artifacts/experiments/<run_id>/results.parquet`
