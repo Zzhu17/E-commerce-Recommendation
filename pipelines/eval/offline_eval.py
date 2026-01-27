@@ -14,12 +14,22 @@ sys.path.insert(0, str(REPO_ROOT))
 from src.evaluation.metrics import hit_at_k, ndcg_at_k, coverage_at_k, diversity_at_k
 
 
+def load_topk(path: Path):
+    import pandas as pd
+    df = pd.read_parquet(path)
+    recs = {}
+    for _, row in df.iterrows():
+        recs.setdefault(int(row.user_id), []).append(int(row.item_id))
+    return recs
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--snapshot-id", required=True)
     parser.add_argument("--database-url", default=os.getenv("DATABASE_URL", "postgresql://rocket:Zzp990812@localhost:5434/rocket"))
     parser.add_argument("--k", type=int, default=10)
+    parser.add_argument("--topk", required=False)
     args = parser.parse_args()
 
     conn = psycopg2.connect(args.database_url)
@@ -36,11 +46,14 @@ def main():
             y_true.setdefault(int(u), set()).add(int(i))
 
         items = sorted({int(i) for _, i in edges})
-        pop_counts = {}
-        for _, i in edges:
-            pop_counts[int(i)] = pop_counts.get(int(i), 0) + 1
-        ranked = [i for i, _ in sorted(pop_counts.items(), key=lambda x: x[1], reverse=True)]
-        recs = {u: ranked[: args.k] for u in y_true.keys()}
+        if args.topk:
+            recs = load_topk(Path(args.topk))
+        else:
+            pop_counts = {}
+            for _, i in edges:
+                pop_counts[int(i)] = pop_counts.get(int(i), 0) + 1
+            ranked = [i for i, _ in sorted(pop_counts.items(), key=lambda x: x[1], reverse=True)]
+            recs = {u: ranked[: args.k] for u in y_true.keys()}
 
         hit = hit_at_k(y_true, recs, args.k)
         ndcg = ndcg_at_k(y_true, recs, args.k)

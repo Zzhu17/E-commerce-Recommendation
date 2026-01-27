@@ -159,6 +159,11 @@ Airflow DAGs:
 Backfill:
 - See `docs/de_backfill.md`
 
+dbt (optional):
+```bash
+dbt run --profiles-dir dbt --project-dir dbt
+```
+
 ## Experiment Framework (DS)
 Batch experiments generate a full artifact bundle per run:
 - `artifacts/experiments/<run_id>/results.parquet`

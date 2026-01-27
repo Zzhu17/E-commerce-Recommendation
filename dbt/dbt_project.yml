@@ -1,0 +1,13 @@
+name: ecommerce_reco
+version: '1.0'
+profile: ecommerce_reco
+
+model-paths: ["models"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+models:
+  ecommerce_reco:
+    +materialized: table

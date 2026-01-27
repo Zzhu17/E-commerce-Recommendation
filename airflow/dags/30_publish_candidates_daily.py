@@ -16,10 +16,20 @@ with DAG(
     default_args={"owner": "serving", "on_failure_callback": notify_failure},
     sla_miss_callback=notify_slack,
 ) as dag:
+    build_topk = BashOperator(
+        task_id="build_topk",
+        bash_command=(
+            "python pipelines/publish/build_topk.py "
+            "--run-id dummy --user-emb artifacts/dummy/user_emb.npy "
+            "--item-emb artifacts/dummy/item_emb.npy --k 10 --output artifacts/user_topk.parquet"
+        ),
+        cwd=str(REPO_ROOT),
+    )
+
     publish = BashOperator(
         task_id="publish_candidates",
         bash_command="python pipelines/publish/publish_candidates.py --run-id dummy --topk artifacts/user_topk.parquet",
         cwd=str(REPO_ROOT),
     )
 
-    publish
+    build_topk >> publish
