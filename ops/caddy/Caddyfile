@@ -1,0 +1,24 @@
+{
+  local_certs
+}
+
+https://localhost {
+  encode gzip
+
+  handle /api/* {
+    reverse_proxy backend:8080
+  }
+
+  handle /actuator/* {
+    reverse_proxy backend:8080
+  }
+
+  handle_path /model/* {
+    reverse_proxy model-api:8000
+  }
+
+  handle {
+    root * /srv
+    file_server
+  }
+}

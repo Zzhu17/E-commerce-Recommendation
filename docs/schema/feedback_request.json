@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "feedback_request.json",
+  "title": "FeedbackRequest",
+  "type": "object",
+  "properties": {
+    "requestId": {"type": "string"},
+    "userId": {"type": "string"},
+    "itemId": {"type": "string"},
+    "eventType": {
+      "type": "string",
+      "enum": ["exposure", "click", "cart", "purchase", "dislike"]
+    },
+    "scene": {
+      "type": "string",
+      "enum": ["home", "detail", "cart", "profile", "search"]
+    },
+    "modelVersion": {"type": ["string", "null"]},
+    "ts": {"type": "integer"},
+    "extra": {"type": ["object", "null"]}
+  },
+  "required": ["requestId", "userId", "itemId", "eventType", "scene", "ts"],
+  "additionalProperties": false
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recommendation_response.json",
+  "title": "RecommendationResponse",
+  "type": "object",
+  "properties": {
+    "requestId": {"type": "string"},
+    "userId": {"type": "string"},
+    "scene": {"type": "string"},
+    "modelVersion": {"type": "string"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "itemId": {"type": "string"},
+          "score": {"type": "number", "minimum": 0, "maximum": 1},
+          "reason": {"type": ["string", "null"], "maxLength": 50},
+          "rank": {"type": "integer", "minimum": 1}
+        },
+        "required": ["itemId", "score", "rank"],
+        "additionalProperties": false
+      }
+    },
+    "ttlSeconds": {"type": "integer", "minimum": 60, "maximum": 600}
+  },
+  "required": ["requestId", "userId", "scene", "modelVersion", "items"],
+  "additionalProperties": false
+}

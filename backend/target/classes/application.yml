@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+app:
+  version: 0.1.0
+
+model:
+  base-url: http://localhost:8000
+  timeout-ms: 1500
+  default-version: v2026.01
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/rocket
+    username: rocket
+    password: Zzp990812
+  sql:
+    init:
+      mode: always
+
+candidate:
+  source: db
+
+feedback:
+  sink: db
+  sink-path: backend/feedback.log
+
+api:
+  auth:
+    enabled: false
+    header: x-api-key
+    value: change-me
+  rate-limit:
+    enabled: false
+    limit: 60
+    window-seconds: 60

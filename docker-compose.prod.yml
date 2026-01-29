@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rocket
+      POSTGRES_PASSWORD: Zzp990812
+      POSTGRES_DB: rocket
+    ports:
+      - "5434:5432"
+    volumes:
+      - conversionops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rocket -d rocket"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reco-net
+
+  model-api:
+    build:
+      context: ./model-api
+    environment:
+      MODEL_VERSION: v2026.01
+    ports:
+      - "8000:8000"
+    networks:
+      - reco-net
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rocket
+      SPRING_DATASOURCE_USERNAME: rocket
+      SPRING_DATASOURCE_PASSWORD: Zzp990812
+      MODEL_BASE_URL: http://model-api:8000
+      CANDIDATE_SOURCE: db
+      FEEDBACK_SINK: db
+      SPRING_SQL_INIT_MODE: always
+      SERVER_PORT: 8080
+      API_RATE_LIMIT_STORE: redis
+      SPRING_DATA_REDIS_HOST: redis
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - model-api
+      - redis
+    networks:
+      - reco-net
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - reco-net
+
+  gateway:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend:/srv:ro
+      - ./ops/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - model-api
+    networks:
+      - reco-net
+
+volumes:
+  conversionops_pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  reco-net:

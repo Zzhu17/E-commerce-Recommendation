@@ -33,3 +33,17 @@ artifacts/models/
 *.egg-info/
 dist/
 build/
+
+# Virtual environments
+.venv/
+.venv_*/
+venv/
+env/
+
+# Build artifacts
+backend/target/
+
+# Logs
+*.log
+backend/feedback*.log
+backend/backend/feedback*.log

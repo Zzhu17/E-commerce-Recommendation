@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reco Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg">
+      <div class="grain"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="kicker">E-Commerce Recommender</p>
+          <h1>Reco Console</h1>
+          <p class="sub">Front-end demo wired to Spring + Model API with live feedback.</p>
+        </div>
+        <div class="status" id="status">
+          <span class="dot"></span>
+          <div>
+            <div class="status-title">Services</div>
+            <div class="status-body" id="statusText">Not checked</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Request</h2>
+          <div class="form">
+            <label>
+              Base URL
+              <input id="baseUrl" value="https://localhost" />
+            </label>
+            <label>
+              User ID
+              <input id="userId" value="u123" />
+            </label>
+            <label>
+              Scene
+              <select id="scene">
+                <option value="home">home</option>
+                <option value="detail">detail</option>
+                <option value="cart">cart</option>
+                <option value="profile">profile</option>
+                <option value="search">search</option>
+              </select>
+            </label>
+            <label>
+              Size
+              <input id="size" type="number" min="1" max="50" value="5" />
+            </label>
+            <label>
+              API Key (optional)
+              <input id="apiKey" placeholder="x-api-key" />
+            </label>
+            <div class="actions">
+              <button id="checkHealth" class="ghost">Check Health</button>
+              <button id="fetchRecs">Get Recommendations</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Recommendations</h2>
+          <div class="meta" id="meta">Request a recommendation to view results.</div>
+          <div class="list" id="recoList"></div>
+        </div>
+
+        <div class="card">
+          <h2>Feedback</h2>
+          <div class="form">
+            <label>
+              Item ID
+              <input id="feedbackItem" placeholder="p001" />
+            </label>
+            <label>
+              Event Type
+              <select id="eventType">
+                <option value="click">click</option>
+                <option value="exposure">exposure</option>
+                <option value="cart">cart</option>
+                <option value="purchase">purchase</option>
+                <option value="dislike">dislike</option>
+              </select>
+            </label>
+            <label>
+              Admin Key (for /admin) - optional
+              <input id="adminKey" placeholder="x-admin-key" />
+            </label>
+            <div class="actions">
+              <button id="sendFeedback" class="ghost">Send Feedback</button>
+              <button id="seedCandidates">Seed Candidates</button>
+            </div>
+          </div>
+          <div class="meta" id="feedbackResult">No feedback sent yet.</div>
+        </div>
+
+        <div class="card wide">
+          <h2>Candidate Admin</h2>
+          <div class="meta">Quick seed for demo users (admin key optional).</div>
+          <pre class="code" id="seedPreview"></pre>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Connected to Spring API via HTTPS reverse proxy.</span>
+        <span>Request ID header is shown after each call.</span>
+      </footer>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,65 @@
+server:
+  port: 8080
+
+app:
+  version: 0.1.0
+
+model:
+  base-url: http://localhost:8000
+  timeout-ms: 1500
+  default-version: v2026.01
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/rocket
+    username: rocket
+    password: Zzp990812
+  sql:
+    init:
+      mode: always
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+candidate:
+  source: db
+
+feedback:
+  sink: db
+  sink-path: backend/feedback.log
+
+reco:
+  cache:
+    enabled: false
+    ttl-seconds: 120
+
+api:
+  auth:
+    enabled: false
+    header: x-api-key
+    value: change-me
+    admin-header: x-admin-key
+    admin-value: change-admin-me
+  rate-limit:
+    enabled: false
+    limit: 60
+    window-seconds: 60
+    store: memory
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: reco-api
+    version: ${app.version:0.1.0}

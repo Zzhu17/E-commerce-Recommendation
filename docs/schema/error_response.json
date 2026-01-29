@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "error_response.json",
+  "title": "ErrorResponse",
+  "type": "object",
+  "properties": {
+    "requestId": {"type": "string"},
+    "code": {
+      "type": "string",
+      "enum": ["PARAM_INVALID", "MODEL_TIMEOUT", "NO_CANDIDATES", "INTERNAL_ERROR"]
+    },
+    "message": {"type": "string", "maxLength": 200}
+  },
+  "required": ["requestId", "code", "message"],
+  "additionalProperties": false
+}

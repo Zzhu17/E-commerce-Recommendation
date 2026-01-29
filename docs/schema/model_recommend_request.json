@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model_recommend_request.json",
+  "title": "ModelRecommendRequest",
+  "type": "object",
+  "properties": {
+    "requestId": {"type": "string"},
+    "userId": {"type": "string"},
+    "scene": {"type": "string"},
+    "numItems": {"type": "integer", "minimum": 1, "maximum": 50},
+    "candidateItems": {
+      "type": ["array", "null"],
+      "items": {"type": "string"},
+      "minItems": 1,
+      "maxItems": 2000
+    },
+    "context": {"type": ["object", "null"]}
+  },
+  "required": ["requestId", "userId", "scene", "numItems"],
+  "additionalProperties": false
+}
