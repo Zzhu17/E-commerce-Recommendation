@@ -14,6 +14,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,13 +45,23 @@ public class RecommendationController {
   @GetMapping("/recommendations")
   public RecommendationResponse getRecommendations(
       @Parameter(description = "User ID")
-      @RequestParam("userId") @NotBlank String userId,
+      @RequestParam("userId")
+      @NotBlank
+      @Size(min = 3, max = 64)
+      @Pattern(regexp = "^[a-zA-Z0-9_-]+$")
+      String userId,
       @Parameter(description = "Scene", example = "home")
-      @RequestParam("scene") @NotBlank String scene,
+      @RequestParam("scene")
+      @NotBlank
+      @Pattern(regexp = "home|detail|cart|profile|search")
+      String scene,
       @Parameter(description = "Number of items", example = "10")
       @RequestParam(value = "size", defaultValue = "10") @Min(1) @Max(50) int size,
       @Parameter(description = "Optional request ID")
-      @RequestParam(value = "requestId", required = false) String requestId
+      @RequestParam(value = "requestId", required = false)
+      @Size(max = 64)
+      @Pattern(regexp = "^[a-zA-Z0-9_-]*$")
+      String requestId
   ) {
     return service.getRecommendations(requestId, userId, scene, size);
   }

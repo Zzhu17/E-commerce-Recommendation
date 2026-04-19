@@ -125,3 +125,11 @@ gateway:
       - \\.sql
       - \\.bak
       - etc/passwd
+
+access:
+  guard:
+    db-query-timeout-seconds: 2
+    max-candidate-fetch: 200
+    max-admin-list-limit: 200
+    max-admin-batch-size: 200
+    cache-timeout-millis: 150
