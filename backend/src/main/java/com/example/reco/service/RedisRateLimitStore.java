@@ -2,8 +2,13 @@ package com.example.reco.service;
 
 import com.example.reco.config.AccessGuardProperties;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -13,10 +18,16 @@ import org.springframework.stereotype.Service;
 public class RedisRateLimitStore implements RateLimitStore {
   private final StringRedisTemplate redisTemplate;
   private final AccessGuardProperties guardProperties;
+  private final ExecutorService executor;
 
   public RedisRateLimitStore(StringRedisTemplate redisTemplate, AccessGuardProperties guardProperties) {
+    this(redisTemplate, guardProperties, Executors.newCachedThreadPool());
+  }
+
+  RedisRateLimitStore(StringRedisTemplate redisTemplate, AccessGuardProperties guardProperties, ExecutorService executor) {
     this.redisTemplate = redisTemplate;
     this.guardProperties = guardProperties;
+    this.executor = executor;
   }
 
   @Override
@@ -28,7 +39,7 @@ public class RedisRateLimitStore implements RateLimitStore {
         redisTemplate.expire(redisKey, Duration.ofSeconds(windowSeconds));
       }
       return count != null && count <= limit;
-    }, false);
+    }, true);
   }
 
   @Override
@@ -45,19 +56,18 @@ public class RedisRateLimitStore implements RateLimitStore {
     return Boolean.TRUE.equals(exists);
   }
 
-  private <T> T runWithTimeout(java.util.concurrent.Callable<T> action, T fallback) {
+  private <T> T runWithTimeout(Callable<T> action, T fallbackValue) {
+    Future<T> future = executor.submit(action);
     try {
-      return CompletableFuture
-          .supplyAsync(() -> {
-            try {
-              return action.call();
-            } catch (Exception e) {
-              throw new RuntimeException(e);
-            }
-          })
-          .get(guardProperties.getCacheTimeoutMillis(), TimeUnit.MILLISECONDS);
-    } catch (Exception ex) {
-      return fallback;
+      return future.get(guardProperties.getCacheTimeoutMillis(), TimeUnit.MILLISECONDS);
+    } catch (TimeoutException ex) {
+      future.cancel(true);
+      return fallbackValue;
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      return fallbackValue;
+    } catch (ExecutionException ex) {
+      return fallbackValue;
     }
   }
 }
