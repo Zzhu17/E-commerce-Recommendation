@@ -6,11 +6,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "api.auth")
 public class SecurityProperties {
-  private boolean enabled = false;
-  private String header = "x-api-key";
-  private String value = "";
-  private String adminHeader = "x-admin-key";
-  private String adminValue = "";
+  private boolean enabled = true;
+  private String jwtSecret = "";
+  private String issuer = "reco-api";
+  private String audience = "reco-admin";
+  private long clockSkewSeconds = 30;
+  private String rolesClaim = "roles";
+  private String readOpsRole = "ops_read";
+  private String writeOpsRole = "ops_write";
+  private String platformAdminRole = "platform_admin";
+  private int authFailureLimit = 10;
+  private int authFailureWindowSeconds = 60;
 
   public boolean isEnabled() {
     return enabled;
@@ -20,35 +26,83 @@ public class SecurityProperties {
     this.enabled = enabled;
   }
 
-  public String getHeader() {
-    return header;
+  public String getJwtSecret() {
+    return jwtSecret;
   }
 
-  public void setHeader(String header) {
-    this.header = header;
+  public void setJwtSecret(String jwtSecret) {
+    this.jwtSecret = jwtSecret;
   }
 
-  public String getValue() {
-    return value;
+  public String getIssuer() {
+    return issuer;
   }
 
-  public void setValue(String value) {
-    this.value = value;
+  public void setIssuer(String issuer) {
+    this.issuer = issuer;
   }
 
-  public String getAdminHeader() {
-    return adminHeader;
+  public String getAudience() {
+    return audience;
   }
 
-  public void setAdminHeader(String adminHeader) {
-    this.adminHeader = adminHeader;
+  public void setAudience(String audience) {
+    this.audience = audience;
   }
 
-  public String getAdminValue() {
-    return adminValue;
+  public long getClockSkewSeconds() {
+    return clockSkewSeconds;
   }
 
-  public void setAdminValue(String adminValue) {
-    this.adminValue = adminValue;
+  public void setClockSkewSeconds(long clockSkewSeconds) {
+    this.clockSkewSeconds = clockSkewSeconds;
+  }
+
+  public String getRolesClaim() {
+    return rolesClaim;
+  }
+
+  public void setRolesClaim(String rolesClaim) {
+    this.rolesClaim = rolesClaim;
+  }
+
+  public String getReadOpsRole() {
+    return readOpsRole;
+  }
+
+  public void setReadOpsRole(String readOpsRole) {
+    this.readOpsRole = readOpsRole;
+  }
+
+  public String getWriteOpsRole() {
+    return writeOpsRole;
+  }
+
+  public void setWriteOpsRole(String writeOpsRole) {
+    this.writeOpsRole = writeOpsRole;
+  }
+
+  public String getPlatformAdminRole() {
+    return platformAdminRole;
+  }
+
+  public void setPlatformAdminRole(String platformAdminRole) {
+    this.platformAdminRole = platformAdminRole;
+  }
+
+  public int getAuthFailureLimit() {
+    return authFailureLimit;
+  }
+
+  public void setAuthFailureLimit(int authFailureLimit) {
+    this.authFailureLimit = authFailureLimit;
+  }
+
+  public int getAuthFailureWindowSeconds() {
+    return authFailureWindowSeconds;
+  }
+
+  public void setAuthFailureWindowSeconds(int authFailureWindowSeconds) {
+    this.authFailureWindowSeconds = authFailureWindowSeconds;
   }
 }

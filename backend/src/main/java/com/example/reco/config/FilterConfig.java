@@ -1,5 +1,7 @@
 package com.example.reco.config;
 
+import com.example.reco.service.JwtAuthService;
+import com.example.reco.service.RateLimitStore;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +18,12 @@ public class FilterConfig {
   }
 
   @Bean
-  public FilterRegistrationBean<ApiKeyFilter> apiKeyFilter(SecurityProperties securityProperties) {
-    ApiKeyFilter filter = new ApiKeyFilter(securityProperties);
-    FilterRegistrationBean<ApiKeyFilter> bean = new FilterRegistrationBean<>();
+  public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilter(
+      SecurityProperties securityProperties,
+      JwtAuthService jwtAuthService,
+      RateLimitStore rateLimitStore) {
+    JwtAuthFilter filter = new JwtAuthFilter(securityProperties, jwtAuthService, rateLimitStore);
+    FilterRegistrationBean<JwtAuthFilter> bean = new FilterRegistrationBean<>();
     bean.setFilter(filter);
     bean.addUrlPatterns("/api/*");
     bean.setOrder(1);
@@ -26,9 +31,10 @@ public class FilterConfig {
   }
 
   @Bean
-  public FilterRegistrationBean<RateLimitFilter> rateLimitFilter(RateLimitProperties rateLimitProperties,
-      SecurityProperties securityProperties, com.example.reco.service.RateLimitStore rateLimitStore) {
-    RateLimitFilter filter = new RateLimitFilter(rateLimitProperties, securityProperties, rateLimitStore);
+  public FilterRegistrationBean<RateLimitFilter> rateLimitFilter(
+      RateLimitProperties rateLimitProperties,
+      com.example.reco.service.RateLimitStore rateLimitStore) {
+    RateLimitFilter filter = new RateLimitFilter(rateLimitProperties, rateLimitStore);
     FilterRegistrationBean<RateLimitFilter> bean = new FilterRegistrationBean<>();
     bean.setFilter(filter);
     bean.addUrlPatterns("/api/*");
