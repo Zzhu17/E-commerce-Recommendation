@@ -18,6 +18,18 @@ public class FilterConfig {
   }
 
   @Bean
+  public FilterRegistrationBean<GatewayProtectionFilter> gatewayProtectionFilter(
+      GatewayProtectionProperties gatewayProtectionProperties,
+      RateLimitStore rateLimitStore) {
+    GatewayProtectionFilter filter = new GatewayProtectionFilter(gatewayProtectionProperties, rateLimitStore);
+    FilterRegistrationBean<GatewayProtectionFilter> bean = new FilterRegistrationBean<>();
+    bean.setFilter(filter);
+    bean.addUrlPatterns("/api/*", "/actuator/*");
+    bean.setOrder(1);
+    return bean;
+  }
+
+  @Bean
   public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilter(
       SecurityProperties securityProperties,
       JwtAuthService jwtAuthService,
@@ -26,7 +38,7 @@ public class FilterConfig {
     FilterRegistrationBean<JwtAuthFilter> bean = new FilterRegistrationBean<>();
     bean.setFilter(filter);
     bean.addUrlPatterns("/api/*");
-    bean.setOrder(1);
+    bean.setOrder(2);
     return bean;
   }
 
@@ -38,7 +50,7 @@ public class FilterConfig {
     FilterRegistrationBean<RateLimitFilter> bean = new FilterRegistrationBean<>();
     bean.setFilter(filter);
     bean.addUrlPatterns("/api/*");
-    bean.setOrder(2);
+    bean.setOrder(3);
     return bean;
   }
 }

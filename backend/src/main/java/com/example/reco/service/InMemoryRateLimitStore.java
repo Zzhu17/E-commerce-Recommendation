@@ -15,6 +15,7 @@ public class InMemoryRateLimitStore implements RateLimitStore {
   }
 
   private final Map<String, Counter> counters = new ConcurrentHashMap<>();
+  private final Map<String, Long> blockedUntil = new ConcurrentHashMap<>();
 
   @Override
   public boolean allow(String key, int limit, int windowSeconds) {
@@ -28,5 +29,24 @@ public class InMemoryRateLimitStore implements RateLimitStore {
       counter.count += 1;
       return counter.count <= limit;
     }
+  }
+
+  @Override
+  public void block(String key, int windowSeconds) {
+    blockedUntil.put(key, Instant.now().getEpochSecond() + windowSeconds);
+  }
+
+  @Override
+  public boolean isBlocked(String key) {
+    Long until = blockedUntil.get(key);
+    long now = Instant.now().getEpochSecond();
+    if (until == null) {
+      return false;
+    }
+    if (until <= now) {
+      blockedUntil.remove(key);
+      return false;
+    }
+    return true;
   }
 }

@@ -101,3 +101,27 @@ retention:
       - .csv
       - .log
       - .json
+
+gateway:
+  protection:
+    enabled: ${GATEWAY_PROTECTION_ENABLED:true}
+    ip-rate-limit-per-minute: ${GATEWAY_IP_RATE_LIMIT_PER_MINUTE:120}
+    user-agent-rate-limit-per-minute: ${GATEWAY_UA_RATE_LIMIT_PER_MINUTE:300}
+    ban-seconds: ${GATEWAY_BAN_SECONDS:900}
+    blocked-user-agents:
+      - sqlmap
+      - nikto
+      - nmap
+      - masscan
+      - python-requests
+      - go-http-client
+    blocked-path-patterns:
+      - \\.git
+      - \\.env
+      - wp-admin
+      - wp-login
+      - phpmyadmin
+      - \\.php
+      - \\.sql
+      - \\.bak
+      - etc/passwd
