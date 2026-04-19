@@ -2,9 +2,9 @@
 
 ## 1) Injection only (no plaintext in code/config)
 - `backend/src/main/resources/application.yml` and compose files now read sensitive values from environment variables.
-- Do **not** commit `.env` with real values.
+- Do **not** commit any `.env*` files.
 - Use one of these providers per environment:
-  - **dev**: local `.env` generated from secret manager export.
+  - **dev**: inject via local shell/session secret manager export.
   - **staging/prod**: Vault / cloud KMS + workload identity / Kubernetes Secret.
 
 ## 2) Production deployment source of truth
