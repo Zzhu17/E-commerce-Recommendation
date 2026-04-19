@@ -45,7 +45,7 @@ jobs:
         run: docker build -t reco-model-api:ci ./model-api
 
       - name: Image CVE scan - backend (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.24.0
         with:
           image-ref: reco-backend:ci
           format: table
@@ -54,7 +54,7 @@ jobs:
           exit-code: '1'
 
       - name: Image CVE scan - model-api (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.24.0
         with:
           image-ref: reco-model-api:ci
           format: table
