@@ -1,0 +1,76 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: reco-security-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: security-events
+      rules:
+        - alert: SecurityAuth401Spike
+          expr: sum(rate(security_auth_failures_total[5m])) > 2
+          for: 10m
+          labels:
+            severity: critical
+            category: security
+            notify: pager
+          annotations:
+            summary: "401 authentication failures are spiking"
+            description: "5m auth failure rate exceeded threshold for 10m"
+
+        - alert: SecurityForbidden403Spike
+          expr: sum(rate(security_forbidden_total[5m])) > 1
+          for: 10m
+          labels:
+            severity: high
+            category: security
+            notify: slack
+          annotations:
+            summary: "403 forbidden responses are spiking"
+            description: "Potential probing or permission abuse"
+
+        - alert: SecurityAdminEndpointAnomaly
+          expr: sum(rate(security_admin_calls_total{outcome="forbidden"}[5m])) > 0.3
+          for: 5m
+          labels:
+            severity: critical
+            category: security
+            notify: pager
+          annotations:
+            summary: "Admin API forbidden access anomaly"
+            description: "Forbidden admin calls exceed baseline"
+
+        - alert: SecurityFailedLoginSourceCluster
+          expr: topk(1, sum(rate(security_failed_login_source_total[5m])) by (source)) > 1
+          for: 10m
+          labels:
+            severity: high
+            category: security
+            notify: email
+          annotations:
+            summary: "Failed login source cluster detected"
+            description: "Single source dominates failed logins"
+
+    - name: availability-events
+      rules:
+        - alert: RecoApiHigh5xxRate
+          expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) > 1
+          for: 10m
+          labels:
+            severity: critical
+            category: availability
+            notify: pager
+          annotations:
+            summary: "Reco API availability degradation"
+            description: "5xx rate exceeded threshold"
+
+        - alert: ModelApiLatencyP95High
+          expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) > 1.5
+          for: 10m
+          labels:
+            severity: warning
+            category: availability
+            notify: slack
+          annotations:
+            summary: "Model API latency P95 is high"
+            description: "Investigate model backend or network saturation"

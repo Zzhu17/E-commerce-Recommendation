@@ -12,6 +12,11 @@ http://localhost {
 https://localhost {
   encode gzip
 
+  log {
+    output stdout
+    format single_field "{\"event\":\"gateway_access\",\"service\":\"gateway\",\"requestId\":\"{http.request.header.X-Request-Id}\",\"method\":\"{http.request.method}\",\"path\":\"{http.request.uri.path}\",\"status\":{http.response.status},\"userId\":\"redacted\",\"itemId\":\"redacted\",\"requestBody\":\"[REDACTED]\"}"
+  }
+
   @blocked_ua header_regexp blockedUa User-Agent (?i)(sqlmap|nikto|nmap|masscan|python-requests|go-http-client)
   respond @blocked_ua "forbidden" 403
 
@@ -54,23 +59,33 @@ https://localhost {
   header @static Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
 
   handle /api/health {
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /api/version {
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /api/recommendations* {
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /api/feedback* {
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /api/admin/* {
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /api/* {
@@ -78,11 +93,15 @@ https://localhost {
   }
 
   handle /model/recommend {
-    reverse_proxy model-api:8000
+    reverse_proxy model-api:8000 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle_path /model/health {
-    reverse_proxy model-api:8000
+    reverse_proxy model-api:8000 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /model/* {
@@ -97,7 +116,9 @@ https://localhost {
     basic_auth {
       {$ACTUATOR_BASIC_AUTH_USER} {$ACTUATOR_BASIC_AUTH_PASSWORD_HASH}
     }
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+      header_up X-Request-Id {http.request.header.X-Request-Id}
+    }
   }
 
   handle /actuator/* {

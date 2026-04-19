@@ -12,9 +12,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AdminAccessService {
   private final SecurityProperties properties;
+  private final SecurityMonitoringService securityMonitoringService;
 
-  public AdminAccessService(SecurityProperties properties) {
+  public AdminAccessService(SecurityProperties properties, SecurityMonitoringService securityMonitoringService) {
     this.properties = properties;
+    this.securityMonitoringService = securityMonitoringService;
   }
 
   public AuthContext currentAuth(HttpServletRequest request) {
@@ -28,22 +30,28 @@ public class AdminAccessService {
   public void requireReadRole(HttpServletRequest request) {
     AuthContext auth = currentAuth(request);
     if (!hasAny(auth.roles(), properties.getReadOpsRole(), properties.getWriteOpsRole(), properties.getPlatformAdminRole())) {
+      securityMonitoringService.recordAdminCall(request.getRequestURI(), "forbidden");
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
     }
+    securityMonitoringService.recordAdminCall(request.getRequestURI(), "allowed");
   }
 
   public void requireWriteRole(HttpServletRequest request) {
     AuthContext auth = currentAuth(request);
     if (!hasAny(auth.roles(), properties.getWriteOpsRole(), properties.getPlatformAdminRole())) {
+      securityMonitoringService.recordAdminCall(request.getRequestURI(), "forbidden");
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
     }
+    securityMonitoringService.recordAdminCall(request.getRequestURI(), "allowed");
   }
 
   public void requirePlatformAdmin(HttpServletRequest request) {
     AuthContext auth = currentAuth(request);
     if (!hasAny(auth.roles(), properties.getPlatformAdminRole())) {
+      securityMonitoringService.recordAdminCall(request.getRequestURI(), "forbidden");
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
     }
+    securityMonitoringService.recordAdminCall(request.getRequestURI(), "allowed");
   }
 
   private boolean hasAny(Set<String> roles, String... required) {
