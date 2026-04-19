@@ -1,5 +1,6 @@
 package com.example.reco.service;
 
+import com.example.reco.config.AccessGuardProperties;
 import com.example.reco.dto.FeedbackEvent;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,13 +10,20 @@ import org.springframework.stereotype.Service;
 public class FeedbackAdminService {
   private final JdbcTemplate jdbcTemplate;
   private final UserTokenService userTokenService;
+  private final AccessGuardProperties guardProperties;
 
-  public FeedbackAdminService(JdbcTemplate jdbcTemplate, UserTokenService userTokenService) {
+  public FeedbackAdminService(
+      JdbcTemplate jdbcTemplate,
+      UserTokenService userTokenService,
+      AccessGuardProperties guardProperties) {
     this.jdbcTemplate = jdbcTemplate;
     this.userTokenService = userTokenService;
+    this.guardProperties = guardProperties;
+    this.jdbcTemplate.setQueryTimeout(guardProperties.getDbQueryTimeoutSeconds());
   }
 
   public List<FeedbackEvent> listByUser(String userId, int limit) {
+    int safeLimit = Math.min(limit, guardProperties.getMaxAdminListLimit());
     String sql = """
         select request_id, user_id, item_id, event_type, scene, model_version, ts, extra, created_at
         from feedback_events
@@ -37,7 +45,7 @@ public class FeedbackAdminService {
             rs.getString("created_at")
         ),
         userTokenService.tokenize(userId),
-        limit
+        safeLimit
     );
   }
 

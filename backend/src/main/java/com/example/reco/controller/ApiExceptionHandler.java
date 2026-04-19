@@ -18,24 +18,41 @@ public class ApiExceptionHandler {
 
   @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class})
   public ResponseEntity<ErrorResponse> handleValidation(Exception ex) {
-    log.warn("Validation error", ex);
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.newRequestId(), "PARAM_INVALID", "invalid request");
+    log.warn("Validation error: {}", ex.getClass().getSimpleName());
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), "PARAM_INVALID", "invalid request");
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+    log.warn("Illegal argument: {}", ex.getMessage());
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), "PARAM_INVALID", "invalid request");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 
   @ExceptionHandler(ResponseStatusException.class)
   public ResponseEntity<ErrorResponse> handleStatus(ResponseStatusException ex) {
     HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
-    String code = status == HttpStatus.FORBIDDEN ? "AUTH_FORBIDDEN" : "AUTH_FAILED";
-    String message = status == HttpStatus.FORBIDDEN ? "forbidden" : "authentication failed";
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.newRequestId(), code, message);
+    String code = switch (status) {
+      case FORBIDDEN -> "AUTH_FORBIDDEN";
+      case UNAUTHORIZED -> "AUTH_FAILED";
+      case TOO_MANY_REQUESTS -> "RATE_LIMITED";
+      default -> "REQUEST_REJECTED";
+    };
+    String message = switch (status) {
+      case FORBIDDEN -> "forbidden";
+      case UNAUTHORIZED -> "authentication failed";
+      case TOO_MANY_REQUESTS -> "too many requests";
+      default -> "request rejected";
+    };
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), code, message);
     return ResponseEntity.status(status).body(body);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
-    log.error("Unhandled error", ex);
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.newRequestId(), "INTERNAL_ERROR", "unexpected error");
+    log.error("Unhandled error: {}", ex.getClass().getSimpleName());
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), "INTERNAL_ERROR", "unexpected error");
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
   }
 }

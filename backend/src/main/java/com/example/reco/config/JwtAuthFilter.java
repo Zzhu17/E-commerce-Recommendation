@@ -1,5 +1,6 @@
 package com.example.reco.config;
 
+import com.example.reco.util.RequestIdUtil;
 import com.example.reco.service.JwtAuthService;
 import com.example.reco.service.RateLimitStore;
 import jakarta.servlet.FilterChain;
@@ -54,8 +55,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         properties.getAuthFailureLimit(),
         properties.getAuthFailureWindowSeconds()
     );
-    response.setStatus(allowed ? HttpStatus.UNAUTHORIZED.value() : HttpStatus.TOO_MANY_REQUESTS.value());
+    boolean rejectedByLimit = !allowed;
+    response.setStatus(rejectedByLimit ? HttpStatus.TOO_MANY_REQUESTS.value() : HttpStatus.UNAUTHORIZED.value());
     response.setContentType("application/json");
-    response.getWriter().write("{\"code\":\"AUTH_FAILED\",\"message\":\"authentication failed\"}");
+    String requestId = response.getHeader(RequestIdFilter.HEADER);
+    if (!RequestIdUtil.isValid(requestId)) {
+      requestId = RequestIdUtil.newRequestId();
+      response.setHeader(RequestIdFilter.HEADER, requestId);
+    }
+    String code = rejectedByLimit ? "RATE_LIMITED" : "AUTH_FAILED";
+    String message = rejectedByLimit ? "too many requests" : "authentication failed";
+    response.getWriter().write(
+        "{\"requestId\":\"" + requestId + "\",\"code\":\"" + code + "\",\"message\":\"" + message + "\"}"
+    );
   }
 }

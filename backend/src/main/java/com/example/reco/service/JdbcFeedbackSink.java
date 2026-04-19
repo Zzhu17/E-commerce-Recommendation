@@ -1,5 +1,6 @@
 package com.example.reco.service;
 
+import com.example.reco.config.AccessGuardProperties;
 import com.example.reco.config.FeedbackPrivacyProperties;
 import com.example.reco.dto.FeedbackRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,17 +18,21 @@ public class JdbcFeedbackSink implements FeedbackSink {
   private final UserTokenService userTokenService;
   private final FeedbackExtraSanitizer extraSanitizer;
   private final FeedbackPrivacyProperties privacyProperties;
+  private final AccessGuardProperties guardProperties;
 
   public JdbcFeedbackSink(
       JdbcTemplate jdbcTemplate,
       UserTokenService userTokenService,
       FeedbackExtraSanitizer extraSanitizer,
-      FeedbackPrivacyProperties privacyProperties
+      FeedbackPrivacyProperties privacyProperties,
+      AccessGuardProperties guardProperties
   ) {
     this.jdbcTemplate = jdbcTemplate;
     this.userTokenService = userTokenService;
     this.extraSanitizer = extraSanitizer;
     this.privacyProperties = privacyProperties;
+    this.guardProperties = guardProperties;
+    this.jdbcTemplate.setQueryTimeout(guardProperties.getDbQueryTimeoutSeconds());
   }
 
   @Override

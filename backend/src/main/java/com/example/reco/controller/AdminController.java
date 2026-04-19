@@ -13,6 +13,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -59,8 +61,15 @@ public class AdminController {
 
   @GetMapping("/candidates")
   public List<CandidateRow> listCandidates(
-      @RequestParam("userId") @NotBlank String userId,
-      @RequestParam("scene") @NotBlank String scene,
+      @RequestParam("userId")
+      @NotBlank
+      @Size(min = 3, max = 64)
+      @Pattern(regexp = "^[a-zA-Z0-9_-]+$")
+      String userId,
+      @RequestParam("scene")
+      @NotBlank
+      @Pattern(regexp = "home|detail|cart|profile|search")
+      String scene,
       @RequestParam(value = "limit", defaultValue = "50") @Min(1) @Max(500) int limit,
       HttpServletRequest request
   ) {
@@ -70,7 +79,11 @@ public class AdminController {
 
   @GetMapping("/feedback")
   public List<FeedbackEvent> listFeedback(
-      @RequestParam("userId") @NotBlank String userId,
+      @RequestParam("userId")
+      @NotBlank
+      @Size(min = 3, max = 64)
+      @Pattern(regexp = "^[a-zA-Z0-9_-]+$")
+      String userId,
       @RequestParam(value = "limit", defaultValue = "50") @Min(1) @Max(500) int limit,
       HttpServletRequest request
   ) {

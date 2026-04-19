@@ -1,5 +1,6 @@
 package com.example.reco.service;
 
+import com.example.reco.config.AccessGuardProperties;
 import com.example.reco.dto.CandidateRow;
 import com.example.reco.dto.CandidateUpsertRequest;
 import java.util.List;
@@ -9,12 +10,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class CandidateAdminService {
   private final JdbcTemplate jdbcTemplate;
+  private final AccessGuardProperties guardProperties;
 
-  public CandidateAdminService(JdbcTemplate jdbcTemplate) {
+  public CandidateAdminService(JdbcTemplate jdbcTemplate, AccessGuardProperties guardProperties) {
     this.jdbcTemplate = jdbcTemplate;
+    this.guardProperties = guardProperties;
+    this.jdbcTemplate.setQueryTimeout(guardProperties.getDbQueryTimeoutSeconds());
   }
 
   public int upsert(List<CandidateUpsertRequest> items) {
+    int maxBatch = guardProperties.getMaxAdminBatchSize();
+    if (items.size() > maxBatch) {
+      throw new IllegalArgumentException("batch size exceeds limit");
+    }
     String sql = """
         insert into candidates (user_id, scene, item_id, score, updated_at)
         values (?, ?, ?, ?, now())
@@ -29,6 +37,7 @@ public class CandidateAdminService {
   }
 
   public List<CandidateRow> list(String userId, String scene, int limit) {
+    int safeLimit = Math.min(limit, guardProperties.getMaxAdminListLimit());
     String sql = """
         select item_id, score, updated_at
         from candidates
@@ -45,7 +54,7 @@ public class CandidateAdminService {
         ),
         userId,
         scene,
-        limit
+        safeLimit
     );
   }
 }
