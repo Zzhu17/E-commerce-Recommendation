@@ -81,8 +81,7 @@ https://localhost {
     reverse_proxy model-api:8000
   }
 
-  handle /model/health {
-    uri replace /model/health /health
+  handle_path /model/health {
     reverse_proxy model-api:8000
   }
 

@@ -116,12 +116,12 @@ gateway:
       - python-requests
       - go-http-client
     blocked-path-patterns:
-      - \.git
-      - \.env
+      - \\.git
+      - \\.env
       - wp-admin
       - wp-login
       - phpmyadmin
-      - \.php
-      - \.sql
-      - \.bak
+      - \\.php
+      - \\.sql
+      - \\.bak
       - etc/passwd
