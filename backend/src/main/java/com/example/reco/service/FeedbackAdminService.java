@@ -40,4 +40,51 @@ public class FeedbackAdminService {
         limit
     );
   }
+
+  public int deleteByUserToken(String userToken, String reason) {
+    String sql = "delete from feedback_events where user_id = ?";
+    int deleted = jdbcTemplate.update(sql, userToken);
+
+    String auditSql = """
+        insert into user_deletion_audit (user_token, reason, deleted_rows)
+        values (?, ?, ?)
+        """;
+    jdbcTemplate.update(auditSql, userToken, reason, deleted);
+    return deleted;
+  }
+
+  public int refreshStorageTier(int hotDays, int warmDays, int coldDays) {
+    String sql = """
+        update feedback_events
+        set storage_tier = case
+          when created_at >= now() - make_interval(days => ?) then 'hot'
+          when created_at >= now() - make_interval(days => ?) then 'warm'
+          when created_at >= now() - make_interval(days => ?) then 'cold'
+          else 'expired'
+        end
+        """;
+    return jdbcTemplate.update(sql, hotDays, warmDays, coldDays);
+  }
+
+  public int purgeExpiredFeedback(int coldDays, int batchSize) {
+    int total = 0;
+    while (true) {
+      String sql = """
+          with doomed as (
+            select id
+            from feedback_events
+            where created_at < now() - make_interval(days => ?)
+            limit ?
+          )
+          delete from feedback_events f
+          using doomed d
+          where f.id = d.id
+          """;
+      int deleted = jdbcTemplate.update(sql, coldDays, batchSize);
+      total += deleted;
+      if (deleted < batchSize) {
+        return total;
+      }
+    }
+  }
 }
