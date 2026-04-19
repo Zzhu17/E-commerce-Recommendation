@@ -29,6 +29,21 @@ feedback:
   sink: db
   sink-path: backend/feedback.log
 
+privacy:
+  feedback:
+    collect-optional-fields: false
+    extra-whitelist:
+      - position
+      - page
+      - source
+      - experiment_id
+      - latency_ms
+    user-token:
+      active-salt-version: v1
+      pepper: ${FEEDBACK_USER_TOKEN_PEPPER}
+      salts:
+        v1: ${FEEDBACK_USER_TOKEN_SALT_V1}
+
 reco:
   cache:
     enabled: false
