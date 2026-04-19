@@ -13,7 +13,7 @@ create index if not exists idx_candidates_score on candidates (score desc);
 create table if not exists feedback_events (
   id bigserial primary key,
   request_id text not null,
-  user_id text not null,
+  user_id text not null, -- stores irreversible token: tok_<saltVersion>_<digest>
   item_id text not null,
   event_type text not null,
   scene text not null,

@@ -3,6 +3,7 @@ package com.example.reco.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.Map;
 
 public record FeedbackRequest(
     @NotBlank String requestId,
@@ -16,5 +17,5 @@ public record FeedbackRequest(
     String scene,
     String modelVersion,
     @NotNull Long ts,
-    Object extra
+    Map<String, Object> extra
 ) {}

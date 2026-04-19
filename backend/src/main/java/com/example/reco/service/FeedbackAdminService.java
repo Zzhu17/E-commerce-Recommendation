@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class FeedbackAdminService {
   private final JdbcTemplate jdbcTemplate;
+  private final UserTokenService userTokenService;
 
-  public FeedbackAdminService(JdbcTemplate jdbcTemplate) {
+  public FeedbackAdminService(JdbcTemplate jdbcTemplate, UserTokenService userTokenService) {
     this.jdbcTemplate = jdbcTemplate;
+    this.userTokenService = userTokenService;
   }
 
   public List<FeedbackEvent> listByUser(String userId, int limit) {
@@ -34,7 +36,7 @@ public class FeedbackAdminService {
             rs.getString("extra"),
             rs.getString("created_at")
         ),
-        userId,
+        userTokenService.tokenize(userId),
         limit
     );
   }
