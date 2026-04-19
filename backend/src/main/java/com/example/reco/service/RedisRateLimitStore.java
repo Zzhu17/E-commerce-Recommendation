@@ -23,4 +23,15 @@ public class RedisRateLimitStore implements RateLimitStore {
     }
     return count != null && count <= limit;
   }
+
+  @Override
+  public void block(String key, int windowSeconds) {
+    redisTemplate.opsForValue().set("ban:" + key, "1", Duration.ofSeconds(windowSeconds));
+  }
+
+  @Override
+  public boolean isBlocked(String key) {
+    Boolean exists = redisTemplate.hasKey("ban:" + key);
+    return Boolean.TRUE.equals(exists);
+  }
 }

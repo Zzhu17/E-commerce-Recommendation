@@ -22,8 +22,6 @@ services:
       context: ./model-api
     environment:
       MODEL_VERSION: v2026.01
-    ports:
-      - "8000:8000"
     networks:
       - reco-net
 
@@ -44,8 +42,6 @@ services:
       API_AUTH_ENABLED: "true"
       API_AUTH_KEY: ${API_AUTH_KEY}
       API_AUTH_ADMIN_KEY: ${API_AUTH_ADMIN_KEY}
-    ports:
-      - "8080:8080"
     depends_on:
       - postgres
       - model-api
@@ -65,6 +61,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      ACTUATOR_BASIC_AUTH_USER: ${ACTUATOR_BASIC_AUTH_USER}
+      ACTUATOR_BASIC_AUTH_PASSWORD_HASH: ${ACTUATOR_BASIC_AUTH_PASSWORD_HASH}
     volumes:
       - ./frontend:/srv:ro
       - ./ops/caddy/Caddyfile:/etc/caddy/Caddyfile:ro

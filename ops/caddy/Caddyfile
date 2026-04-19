@@ -1,20 +1,108 @@
 {
   local_certs
+  servers {
+    trusted_proxies static private_ranges
+  }
+}
+
+http://localhost {
+  redir https://localhost{uri} permanent
 }
 
 https://localhost {
   encode gzip
 
+  @blocked_ua header_regexp blockedUa User-Agent (?i)(sqlmap|nikto|nmap|masscan|python-requests|go-http-client)
+  respond @blocked_ua "forbidden" 403
+
+  @blocked_path path_regexp blockedPath (?i)(\.git|\.env|wp-admin|wp-login|phpmyadmin|\.php|/etc/passwd)
+  respond @blocked_path "forbidden" 403
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    -Server
+  }
+
+  @trusted_origin header Origin https://app.example.com https://admin.example.com
+  header @trusted_origin Access-Control-Allow-Origin "{http.request.header.Origin}"
+  header @trusted_origin Vary "Origin"
+
+  @cors_preflight {
+    method OPTIONS
+    path /api/* /model/*
+    header Origin *
+  }
+  handle @cors_preflight {
+    @untrusted_preflight not header Origin https://app.example.com https://admin.example.com
+    respond @untrusted_preflight "forbidden origin" 403
+    header Access-Control-Allow-Origin "{http.request.header.Origin}"
+    header Vary "Origin"
+    header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    header Access-Control-Allow-Headers "Authorization, Content-Type, X-Request-Id"
+    header Access-Control-Max-Age "600"
+    respond "" 204
+  }
+
+  @dynamic path /api/* /model/* /actuator/*
+  header @dynamic Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+
+  @static path / /index.html /app.js /styles.css
+  header @static Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+
+  handle /api/health {
+    reverse_proxy backend:8080
+  }
+
+  handle /api/version {
+    reverse_proxy backend:8080
+  }
+
+  handle /api/recommendations* {
+    reverse_proxy backend:8080
+  }
+
+  handle /api/feedback* {
+    reverse_proxy backend:8080
+  }
+
+  handle /api/admin/* {
+    reverse_proxy backend:8080
+  }
+
   handle /api/* {
+    respond "forbidden" 403
+  }
+
+  handle /model/recommend {
+    reverse_proxy model-api:8000
+  }
+
+  handle /model/health {
+    uri replace /model/health /health
+    reverse_proxy model-api:8000
+  }
+
+  handle /model/* {
+    respond "forbidden" 403
+  }
+
+  @actuator_private {
+    remote_ip private_ranges
+    path /actuator/*
+  }
+  handle @actuator_private {
+    basic_auth {
+      {$ACTUATOR_BASIC_AUTH_USER} {$ACTUATOR_BASIC_AUTH_PASSWORD_HASH}
+    }
     reverse_proxy backend:8080
   }
 
   handle /actuator/* {
-    reverse_proxy backend:8080
-  }
-
-  handle_path /model/* {
-    reverse_proxy model-api:8000
+    respond "forbidden" 403
   }
 
   handle {
