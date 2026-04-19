@@ -21,8 +21,8 @@ public final class RequestIdUtil {
     return requestId != null && PATTERN.matcher(requestId).matches();
   }
 
-  public static String currentOrNew() {
+  public static String currentOrUnknown() {
     String current = MDC.get("requestId");
-    return isValid(current) ? current : newRequestId();
+    return isValid(current) ? current : "unknown";
   }
 }

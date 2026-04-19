@@ -19,14 +19,14 @@ public class ApiExceptionHandler {
   @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class})
   public ResponseEntity<ErrorResponse> handleValidation(Exception ex) {
     log.warn("Validation error: {}", ex.getClass().getSimpleName());
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), "PARAM_INVALID", "invalid request");
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrUnknown(), "PARAM_INVALID", "invalid request");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
     log.warn("Illegal argument: {}", ex.getMessage());
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), "PARAM_INVALID", "invalid request");
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrUnknown(), "PARAM_INVALID", "invalid request");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 
@@ -45,14 +45,14 @@ public class ApiExceptionHandler {
       case TOO_MANY_REQUESTS -> "too many requests";
       default -> "request rejected";
     };
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), code, message);
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrUnknown(), code, message);
     return ResponseEntity.status(status).body(body);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
     log.error("Unhandled error: {}", ex.getClass().getSimpleName());
-    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrNew(), "INTERNAL_ERROR", "unexpected error");
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.currentOrUnknown(), "INTERNAL_ERROR", "unexpected error");
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
   }
 }

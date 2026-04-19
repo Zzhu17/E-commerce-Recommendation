@@ -1,6 +1,8 @@
 package com.example.reco.config;
 
 import com.example.reco.service.RateLimitStore;
+import com.example.reco.service.SecurityMonitoringService;
+import com.example.reco.util.RequestIdUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,10 +18,15 @@ public class GatewayProtectionFilter extends OncePerRequestFilter {
 
   private final GatewayProtectionProperties properties;
   private final RateLimitStore rateLimitStore;
+  private final SecurityMonitoringService securityMonitoringService;
 
-  public GatewayProtectionFilter(GatewayProtectionProperties properties, RateLimitStore rateLimitStore) {
+  public GatewayProtectionFilter(
+      GatewayProtectionProperties properties,
+      RateLimitStore rateLimitStore,
+      SecurityMonitoringService securityMonitoringService) {
     this.properties = properties;
     this.rateLimitStore = rateLimitStore;
+    this.securityMonitoringService = securityMonitoringService;
   }
 
   @Override
@@ -39,12 +46,14 @@ public class GatewayProtectionFilter extends OncePerRequestFilter {
 
     String banKey = "gw:ban:ip:" + remoteIp;
     if (!rateLimitStore.allow(banKey, 1, properties.getBanSeconds())) {
+      securityMonitoringService.recordForbidden(path);
       reject(response, HttpStatus.FORBIDDEN, "BANNED", "request denied");
       return;
     }
 
     if (isBlocked(userAgent, properties.getBlockedUserAgents()) || isBlocked(path + "?" + query, properties.getBlockedPathPatterns())) {
       rateLimitStore.allow(banKey, 0, properties.getBanSeconds());
+      securityMonitoringService.recordForbidden(path);
       reject(response, HttpStatus.FORBIDDEN, "WAF_BLOCKED", "request denied");
       return;
     }
@@ -72,8 +81,10 @@ public class GatewayProtectionFilter extends OncePerRequestFilter {
   }
 
   private void reject(HttpServletResponse response, HttpStatus status, String code, String message) throws IOException {
+    String requestId = RequestIdUtil.currentOrUnknown();
     response.setStatus(status.value());
     response.setContentType("application/json");
-    response.getWriter().write("{\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
+    response.getWriter().write(
+        "{\"requestId\":\"" + requestId + "\",\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
   }
 }

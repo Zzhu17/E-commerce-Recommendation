@@ -3,6 +3,7 @@ package com.example.reco.config;
 import com.example.reco.util.RequestIdUtil;
 import com.example.reco.service.JwtAuthService;
 import com.example.reco.service.RateLimitStore;
+import com.example.reco.service.SecurityMonitoringService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,11 +17,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   private final SecurityProperties properties;
   private final JwtAuthService jwtAuthService;
   private final RateLimitStore rateLimitStore;
+  private final SecurityMonitoringService securityMonitoringService;
 
-  public JwtAuthFilter(SecurityProperties properties, JwtAuthService jwtAuthService, RateLimitStore rateLimitStore) {
+  public JwtAuthFilter(
+      SecurityProperties properties,
+      JwtAuthService jwtAuthService,
+      RateLimitStore rateLimitStore,
+      SecurityMonitoringService securityMonitoringService) {
     this.properties = properties;
     this.jwtAuthService = jwtAuthService;
     this.rateLimitStore = rateLimitStore;
+    this.securityMonitoringService = securityMonitoringService;
   }
 
   @Override
@@ -56,13 +63,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         properties.getAuthFailureWindowSeconds()
     );
     boolean rejectedByLimit = !allowed;
+    securityMonitoringService.recordAuthFailure(path, remote);
     response.setStatus(rejectedByLimit ? HttpStatus.TOO_MANY_REQUESTS.value() : HttpStatus.UNAUTHORIZED.value());
     response.setContentType("application/json");
-    String requestId = response.getHeader(RequestIdFilter.HEADER);
-    if (!RequestIdUtil.isValid(requestId)) {
-      requestId = RequestIdUtil.newRequestId();
-      response.setHeader(RequestIdFilter.HEADER, requestId);
-    }
+    String requestId = RequestIdUtil.currentOrUnknown();
     String code = rejectedByLimit ? "RATE_LIMITED" : "AUTH_FAILED";
     String message = rejectedByLimit ? "too many requests" : "authentication failed";
     response.getWriter().write(
