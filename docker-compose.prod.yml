@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: rocket
-      POSTGRES_PASSWORD: Zzp990812
-      POSTGRES_DB: rocket
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5434:5432"
     volumes:
       - conversionops_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rocket -d rocket"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,9 +31,9 @@ services:
     build:
       context: ./backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rocket
-      SPRING_DATASOURCE_USERNAME: rocket
-      SPRING_DATASOURCE_PASSWORD: Zzp990812
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       MODEL_BASE_URL: http://model-api:8000
       CANDIDATE_SOURCE: db
       FEEDBACK_SINK: db
@@ -41,6 +41,9 @@ services:
       SERVER_PORT: 8080
       API_RATE_LIMIT_STORE: redis
       SPRING_DATA_REDIS_HOST: redis
+      API_AUTH_ENABLED: "true"
+      API_AUTH_KEY: ${API_AUTH_KEY}
+      API_AUTH_ADMIN_KEY: ${API_AUTH_ADMIN_KEY}
     ports:
       - "8080:8080"
     depends_on:

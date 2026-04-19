@@ -1,0 +1,12 @@
+title = "repo gitleaks config"
+
+[allowlist]
+description = "ignore placeholder-only secret examples"
+paths = [
+  '''(^|/)\.env\.(dev|staging|prod)\.example$'''
+]
+regexes = [
+  '''__from_secret_manager__''',
+  '''__inject_from_vault_or_k8s_secret__''',
+  '''__inject_from_vault_or_kms_or_k8s_secret__'''
+]
