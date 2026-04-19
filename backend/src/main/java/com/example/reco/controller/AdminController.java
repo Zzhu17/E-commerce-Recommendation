@@ -3,6 +3,7 @@ package com.example.reco.controller;
 import com.example.reco.dto.CandidateRow;
 import com.example.reco.dto.CandidateUpsertBatch;
 import com.example.reco.dto.FeedbackEvent;
+import com.example.reco.dto.UserDeletionRequest;
 import com.example.reco.service.CandidateAdminService;
 import com.example.reco.service.FeedbackAdminService;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,5 +55,11 @@ public class AdminController {
       @RequestParam(value = "limit", defaultValue = "50") @Min(1) @Max(500) int limit
   ) {
     return feedbackAdminService.listByUser(userId, limit);
+  }
+
+  @PostMapping("/privacy/delete-user")
+  public Map<String, Object> deleteUserData(@Valid @RequestBody UserDeletionRequest request) {
+    int deletedRows = feedbackAdminService.deleteByUserToken(request.userToken(), request.reason());
+    return Map.of("userToken", request.userToken(), "deletedFeedbackRows", deletedRows);
   }
 }

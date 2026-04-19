@@ -78,3 +78,21 @@ info:
   app:
     name: reco-api
     version: ${app.version:0.1.0}
+
+
+retention:
+  hot-days: 90
+  warm-days: 180
+  cold-days: 365
+  cleanup:
+    cron: "0 30 2 * * *"
+    batch-size: 5000
+  artifact:
+    ttl-days: 30
+    paths:
+      - exports
+      - artifacts
+    include-extensions:
+      - .csv
+      - .log
+      - .json
