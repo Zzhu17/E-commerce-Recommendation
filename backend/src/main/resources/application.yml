@@ -51,13 +51,19 @@ reco:
 
 api:
   auth:
-    enabled: ${API_AUTH_ENABLED}
-    header: x-api-key
-    value: ${API_AUTH_KEY}
-    admin-header: x-admin-key
-    admin-value: ${API_AUTH_ADMIN_KEY}
+    enabled: ${API_AUTH_ENABLED:true}
+    jwt-secret: ${API_AUTH_JWT_SECRET}
+    issuer: ${API_AUTH_ISSUER:reco-api}
+    audience: ${API_AUTH_AUDIENCE:reco-admin}
+    clock-skew-seconds: 30
+    roles-claim: roles
+    read-ops-role: ops_read
+    write-ops-role: ops_write
+    platform-admin-role: platform_admin
+    auth-failure-limit: 10
+    auth-failure-window-seconds: 60
   rate-limit:
-    enabled: false
+    enabled: ${API_RATE_LIMIT_ENABLED:true}
     limit: 60
     window-seconds: 60
     store: memory

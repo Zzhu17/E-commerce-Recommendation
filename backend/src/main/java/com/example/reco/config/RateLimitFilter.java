@@ -10,13 +10,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 public class RateLimitFilter extends OncePerRequestFilter {
   private final RateLimitProperties properties;
-  private final SecurityProperties securityProperties;
   private final com.example.reco.service.RateLimitStore rateLimitStore;
 
-  public RateLimitFilter(RateLimitProperties properties, SecurityProperties securityProperties,
-      com.example.reco.service.RateLimitStore rateLimitStore) {
+  public RateLimitFilter(RateLimitProperties properties, com.example.reco.service.RateLimitStore rateLimitStore) {
     this.properties = properties;
-    this.securityProperties = securityProperties;
     this.rateLimitStore = rateLimitStore;
   }
 
@@ -34,9 +31,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
       return;
     }
 
-    String key = request.getHeader(securityProperties.getHeader());
+    String key = request.getRemoteAddr();
+    Object auth = request.getAttribute(JwtAuthFilter.ATTR_AUTH_CONTEXT);
+    if (auth instanceof AuthContext context && context.subject() != null && !context.subject().isBlank()) {
+      key = "sub:" + context.subject();
+    }
     if (key == null || key.isBlank()) {
-      key = request.getRemoteAddr();
+      key = "unknown";
     }
 
     boolean allowed = rateLimitStore.allow(key, properties.getLimit(), properties.getWindowSeconds());

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -20,6 +21,15 @@ public class ApiExceptionHandler {
     log.warn("Validation error", ex);
     ErrorResponse body = new ErrorResponse(RequestIdUtil.newRequestId(), "PARAM_INVALID", "invalid request");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+  }
+
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<ErrorResponse> handleStatus(ResponseStatusException ex) {
+    HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+    String code = status == HttpStatus.FORBIDDEN ? "AUTH_FORBIDDEN" : "AUTH_FAILED";
+    String message = status == HttpStatus.FORBIDDEN ? "forbidden" : "authentication failed";
+    ErrorResponse body = new ErrorResponse(RequestIdUtil.newRequestId(), code, message);
+    return ResponseEntity.status(status).body(body);
   }
 
   @ExceptionHandler(Exception.class)

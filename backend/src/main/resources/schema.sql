@@ -50,3 +50,13 @@ create table if not exists user_deletion_audit (
 );
 
 create index if not exists idx_user_deletion_requested on user_deletion_audit (user_token, requested_at desc);
+
+create table if not exists admin_action_audit (
+  id bigserial primary key,
+  actor text not null,
+  action text not null,
+  details text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_admin_action_created on admin_action_audit (action, created_at desc);
