@@ -3,15 +3,15 @@ services:
     image: postgres:16
     container_name: conversionops-postgres
     environment:
-      POSTGRES_USER: rocket
-      POSTGRES_PASSWORD: Zzp990812
-      POSTGRES_DB: rocket
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5434:5432"
     volumes:
       - conversionops_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rocket -d rocket"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,8 +21,8 @@ services:
     container_name: conversionops-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -37,14 +37,21 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://rocket:Zzp990812@postgres:5432/rocket
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW_SQL_ALCHEMY_CONN}
+      AIRFLOW_ADMIN_USERNAME: ${AIRFLOW_ADMIN_USERNAME}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+      AIRFLOW_ADMIN_EMAIL: ${AIRFLOW_ADMIN_EMAIL}
     ports:
       - "8080:8080"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./pipelines:/opt/airflow/pipelines
       - ./sql:/opt/airflow/sql
-    command: bash -c "airflow db upgrade && airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@example.com && airflow webserver & airflow scheduler"
+    command: >
+      bash -c "airflow db upgrade &&
+      airflow users create --username $$AIRFLOW_ADMIN_USERNAME --password $$AIRFLOW_ADMIN_PASSWORD
+      --firstname admin --lastname admin --role Admin --email $$AIRFLOW_ADMIN_EMAIL &&
+      airflow webserver & airflow scheduler"
 
 volumes:
   conversionops_pgdata:

@@ -135,7 +135,7 @@ async function sendFeedback(itemIdOverride, eventOverride) {
 }
 
 async function seedCandidates() {
-  const { response, requestId, body } = await request("/api/admin/candidates", {
+  const { response, requestId } = await request("/api/admin/candidates", {
     method: "POST",
     headers: buildHeaders(true),
     body: JSON.stringify(seedPayload),
@@ -143,7 +143,7 @@ async function seedCandidates() {
 
   feedbackResultEl.textContent = response.ok
     ? `Seeded candidates | requestId ${requestId}`
-    : `Seed failed ${response.status} | requestId ${requestId} | ${JSON.stringify(body)}`;
+    : `Seed failed ${response.status} | requestId ${requestId}`;
 }
 
 

@@ -11,9 +11,9 @@ model:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5434/rocket
-    username: rocket
-    password: Zzp990812
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   sql:
     init:
       mode: always
@@ -39,7 +39,7 @@ privacy:
       - experiment_id
       - latency_ms
     user-token:
-      active-salt-version: v1
+      active-salt-version: ${FEEDBACK_USER_TOKEN_ACTIVE_SALT_VERSION}
       pepper: ${FEEDBACK_USER_TOKEN_PEPPER}
       salts:
         v1: ${FEEDBACK_USER_TOKEN_SALT_V1}
@@ -51,11 +51,11 @@ reco:
 
 api:
   auth:
-    enabled: false
+    enabled: ${API_AUTH_ENABLED}
     header: x-api-key
-    value: change-me
+    value: ${API_AUTH_KEY}
     admin-header: x-admin-key
-    admin-value: change-admin-me
+    admin-value: ${API_AUTH_ADMIN_KEY}
   rate-limit:
     enabled: false
     limit: 60
@@ -78,7 +78,6 @@ info:
   app:
     name: reco-api
     version: ${app.version:0.1.0}
-
 
 retention:
   hot-days: 90
