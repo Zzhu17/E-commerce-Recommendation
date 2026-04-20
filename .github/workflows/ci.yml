@@ -5,75 +5,50 @@ on:
   pull_request:
 
 jobs:
-  test-and-scan:
+  quality-gates:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
-
-
-          python-version: '3.11'
-
-          pip install pip-audit
-
-
-      - name: SCA scan (pip-audit)
-        run: pip-audit --strict
-
-      - name: Build backend image
-        run: docker build -t reco-backend:ci ./backend
-
-      - name: Build model-api image
-        run: docker build -t reco-model-api:ci ./model-api
-
-      - name: Image CVE scan - backend (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: reco-backend:ci
-          format: table
-          scanners: vuln
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-
-      - name: Image CVE scan - model-api (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: reco-model-api:ci
-          format: table
-          scanners: vuln
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-      contents: read
-      security-events: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Verify dependency lock files are up to date
+        run: |
+          python -m pip install --upgrade pip pip-tools
+          pip-compile --allow-unsafe --generate-hashes --output-file=requirements.lock requirements.txt
+          pip-compile --generate-hashes --output-file=model-api/requirements.lock model-api/requirements.txt
+          git diff --exit-code requirements.lock model-api/requirements.lock
+
+      - name: Install dependencies from lock file
+        run: |
+          python -m pip install --upgrade pip
+          pip install --require-hashes -r requirements.lock
+          pip install pip-audit pytest checkov pip-licenses cyclonedx-bom
+
+      - name: Unit tests
+        run: pytest -q tests/test_split.py tests/test_metrics.py
+
+      - name: Integration tests
+        run: pytest -q tests/integration
+
       - name: Secret scan (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: "false"
-          GITLEAKS_ENABLE_COMMIT_SCAN: "false"
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pip-audit
-
-      - name: Python unit tests
-        run: pytest -q
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+          GITLEAKS_ENABLE_COMMIT_SCAN: 'false'
 
       - name: SCA scan (pip-audit)
-        run: pip-audit --strict
+        run: pip-audit --strict -r requirements.lock
 
       - name: Build backend image
         run: docker build -t reco-backend:ci ./backend
@@ -81,20 +56,47 @@ jobs:
       - name: Build model-api image
         run: docker build -t reco-model-api:ci ./model-api
 
-      - name: Image CVE scan - backend (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@v0.24.0
-        with:
-          image-ref: reco-backend:ci
-          format: table
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          exit-code: '1'
+      - name: Image CVE scan - backend
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            reco-backend:ci
 
-      - name: Image CVE scan - model-api (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@v0.24.0
+      - name: Image CVE scan - model-api
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            reco-model-api:ci
+
+      - name: IaC scan (Checkov)
+        run: checkov -d . --framework dockerfile,yaml,secrets --skip-download --quiet
+
+      - name: Generate SBOM (CycloneDX)
+        run: cyclonedx-py requirements requirements.lock -o sbom-python.cdx.json --sv 1.5
+
+      - name: License compliance check (deny high-risk licenses)
+        run: |
+          python -m venv .licenv_api
+          ./.licenv_api/bin/pip install --upgrade pip
+          ./.licenv_api/bin/pip install --require-hashes -r model-api/requirements.lock
+          ./.licenv_api/bin/pip install pip-licenses
+          pip-licenses \
+            --python ./.licenv_api/bin/python \
+            --from=mixed \
+            --with-urls \
+            --partial-match \
+            --allow-only='MIT License;MIT;BSD License;BSD-2-Clause;BSD-3-Clause;Apache Software License;Apache License 2.0;Apache License, Version 2.0;Apache 2.0;Apache-2.0;Python Software Foundation License;PSF-2.0;ISC License;ISC License (ISCL);MPL-2.0;Mozilla Public License 2.0 (MPL 2.0);Public Domain;LGPLv2+;LGPLv3+'
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
         with:
-          image-ref: reco-model-api:ci
-          format: table
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          exit-code: '1'
+          name: sbom-python
+          path: sbom-python.cdx.json
