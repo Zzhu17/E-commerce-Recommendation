@@ -25,6 +25,7 @@ Status:
   - [Reproducibility (Data + Schema)](#reproducibility-data--schema)
   - [DE Pipeline (Airflow)](#de-pipeline-airflow)
 - [Full-Stack (Frontend + Spring + Model API)](#full-stack-frontend--spring--model-api)
+- [Security & Privacy Governance](#security--privacy-governance)
   - [Online System Summary](#online-system-summary)
   - [How to Run (Production Compose)](#how-to-run-production-compose)
   - [How to Run (Local Dev)](#how-to-run-local-dev)
@@ -232,6 +233,16 @@ dbt run --profiles-dir dbt --project-dir dbt
 
 Airflow variable:
 - `model_version` (used by `30_publish_candidates_daily`)
+
+---
+
+
+## Security & Privacy Governance
+- Privacy policy & data processing notice: `docs/privacy_policy_and_data_processing_notice.md`
+- DPIA + threat model: `docs/security/dpia_threat_model.md`
+- Access control matrix: `docs/security/access_control_matrix.md`
+- Quarterly access review & annual pentest: `docs/security/access-review-and-pentest-policy.md`
+- Security training program: `docs/security/security-training-program.md`
 
 ---
 
