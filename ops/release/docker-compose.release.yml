@@ -1,0 +1,5 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+  model-api:
+    image: ${MODEL_API_IMAGE}
