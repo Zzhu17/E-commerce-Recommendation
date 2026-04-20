@@ -80,7 +80,7 @@ jobs:
         run: checkov -d . --framework dockerfile,yaml,secrets --skip-download --quiet
 
       - name: Generate SBOM (CycloneDX)
-        run: cyclonedx-py requirements requirements.lock --output-file sbom-python.cdx.json --spec-version 1.5
+        run: cyclonedx-py requirements requirements.lock -o sbom-python.cdx.json --sv 1.5
 
       - name: License compliance check (deny high-risk licenses)
         run: |
