@@ -6,6 +6,9 @@ RUN mvn -q -DskipTests package
 
 FROM eclipse-temurin:17-jre
 RUN groupadd --system app && useradd --system --gid app --uid 10001 --home /app app
+RUN chown -R app:app /app
+USER app
+RUN groupadd --system app && useradd --system --gid app --uid 10001 --home /app app
 WORKDIR /app
 COPY --from=build /app/target/*.jar /app/app.jar
 RUN chown -R app:app /app

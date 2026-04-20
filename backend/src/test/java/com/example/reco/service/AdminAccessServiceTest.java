@@ -2,6 +2,8 @@ package com.example.reco.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+  private final SecurityMonitoringService securityMonitoringService = mock(SecurityMonitoringService.class);
+  private final AdminAccessService service = new AdminAccessService(properties, securityMonitoringService);
 
 import com.example.reco.config.AuthContext;
 import com.example.reco.config.JwtAuthFilter;

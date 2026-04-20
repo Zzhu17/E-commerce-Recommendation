@@ -10,6 +10,43 @@ jobs:
     permissions:
       contents: read
       security-events: write
+
+
+          python-version: '3.11'
+
+          pip install pip-audit
+
+
+      - name: SCA scan (pip-audit)
+        run: pip-audit --strict
+
+      - name: Build backend image
+        run: docker build -t reco-backend:ci ./backend
+
+      - name: Build model-api image
+        run: docker build -t reco-model-api:ci ./model-api
+
+      - name: Image CVE scan - backend (fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: reco-backend:ci
+          format: table
+          scanners: vuln
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+      - name: Image CVE scan - model-api (fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: reco-model-api:ci
+          format: table
+          scanners: vuln
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
         with:
