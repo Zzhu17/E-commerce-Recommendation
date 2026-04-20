@@ -87,7 +87,7 @@ jobs:
           pip-licenses \
             --from=mixed \
             --with-urls \
-            --allow-only='MIT License;MIT;BSD License;BSD-2-Clause;BSD-3-Clause;Apache Software License;Apache License 2.0;Apache-2.0;Python Software Foundation License;PSF-2.0;ISC License;MPL-2.0;Public Domain;LGPLv2+;LGPLv3+'
+            --allow-only='MIT License;MIT;BSD License;BSD-2-Clause;BSD-3-Clause;Apache Software License;Apache License 2.0;Apache-2.0;Python Software Foundation License;PSF-2.0;ISC License;ISC License (ISCL);MPL-2.0;Public Domain;LGPLv2+;LGPLv3+'
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
