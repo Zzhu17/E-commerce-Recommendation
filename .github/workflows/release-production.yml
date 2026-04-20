@@ -30,7 +30,7 @@ jobs:
       - run: pytest -q tests/test_split.py tests/test_metrics.py
       - run: pytest -q tests/integration
       - run: pip-audit --strict -r requirements.lock
-      - run: checkov -d . --framework dockerfile,docker_compose,secrets --quiet
+      - run: checkov -d . --framework dockerfile,yaml,secrets --skip-download --quiet
 
   build-and-sign:
     runs-on: ubuntu-latest

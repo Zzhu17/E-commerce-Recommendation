@@ -77,7 +77,7 @@ jobs:
             reco-model-api:ci
 
       - name: IaC scan (Checkov)
-        run: checkov -d . --framework dockerfile,docker_compose,secrets --quiet
+        run: checkov -d . --framework dockerfile,yaml,secrets --skip-download --quiet
 
       - name: Generate SBOM (CycloneDX)
         run: cyclonedx-py requirements requirements.lock --output-file sbom-python.cdx.json --spec-version 1.5
