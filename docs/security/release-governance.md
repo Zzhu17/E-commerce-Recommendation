@@ -1,7 +1,7 @@
 # Production 发布治理
 
 ## 强制发布门禁
-`release-production.yml` 在发布前必须通过：
+`release-production.yml` 发布前必须通过：
 - 单元测试
 - 集成测试
 - 依赖安全扫描（pip-audit）
@@ -9,13 +9,9 @@
 
 ## 双人审批与变更审计
 - `deploy-production` 绑定 GitHub `production` environment。
-- 在仓库设置中为该 environment 配置 `Required reviewers = 2`，才允许进入生产部署。
-- 每次发布都会生成 `production-release.json` 审计记录（发布人、commit、digest、时间）。
+- 在仓库设置中为该 environment 配置 `Required reviewers = 2`。
+- 每次发布产出 `production-release.json` 审计记录（发布人、commit、digest、时间）。
 
 ## 产物签名与部署验签
 - 镜像使用 Cosign keyless 签名。
-- 部署前调用 `scripts/verify_release_integrity.sh`，仅允许通过验签且带 digest 的镜像。
-
-## 回滚与一键降级
-- 使用 `scripts/rollback_release.sh <backend_digest_ref> <model_api_digest_ref>` 执行一键回滚。
-- 回滚仅接受 `@sha256:` 不可变镜像引用，避免标签漂移带来的风险。
+- 部署前执行 `scripts/verify_release_integrity.sh`，仅允许通过验签且带 digest 的镜像。

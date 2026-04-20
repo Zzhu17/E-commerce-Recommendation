@@ -23,118 +23,77 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install dependencies from lock file
-        run: |
+      - run: |
           python -m pip install --upgrade pip
           pip install --require-hashes -r requirements.lock
           pip install pip-audit checkov
-      - name: Unit tests
-        run: pytest -q tests/test_split.py tests/test_metrics.py
-      - name: Integration tests
-        run: pytest -q tests/integration
-      - name: Security scan
-        run: pip-audit --strict -r requirements.lock
-      - name: IaC scan
-        run: checkov -d . --framework dockerfile,docker_compose,secrets --quiet
+      - run: pytest -q tests/test_split.py tests/test_metrics.py
+      - run: pytest -q tests/integration
+      - run: pip-audit --strict -r requirements.lock
+      - run: checkov -d . --framework dockerfile,docker_compose,secrets --quiet
 
-  build-sign-and-attest:
+  build-and-sign:
     runs-on: ubuntu-latest
     needs: pre-release-gates
     permissions:
       contents: read
       packages: write
       id-token: write
-      attestations: write
     outputs:
-      backend_digest: ${{ steps.backend_digest.outputs.digest }}
-      model_digest: ${{ steps.model_digest.outputs.digest }}
+      backend_digest: ${{ steps.push_backend.outputs.digest }}
+      model_digest: ${{ steps.push_model.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push backend image
-        id: push_backend
+      - id: push_backend
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ github.event.inputs.release_tag }}
-
-      - name: Build and push model-api image
-        id: push_model
+      - id: push_model
         uses: docker/build-push-action@v6
         with:
           context: ./model-api
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_MODEL_API }}:${{ github.event.inputs.release_tag }}
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.6.0
-
-      - name: Sign backend image (keyless)
-        run: cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}@${{ steps.push_backend.outputs.digest }}
-
-      - name: Sign model-api image (keyless)
-        run: cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_MODEL_API }}@${{ steps.push_model.outputs.digest }}
-
-      - name: Output backend digest
-        id: backend_digest
-        run: echo "digest=${{ steps.push_backend.outputs.digest }}" >> "$GITHUB_OUTPUT"
-
-      - name: Output model digest
-        id: model_digest
-        run: echo "digest=${{ steps.push_model.outputs.digest }}" >> "$GITHUB_OUTPUT"
+      - uses: sigstore/cosign-installer@v3.6.0
+      - run: cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}@${{ steps.push_backend.outputs.digest }}
+      - run: cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_MODEL_API }}@${{ steps.push_model.outputs.digest }}
 
   deploy-production:
     runs-on: ubuntu-latest
-    needs: build-sign-and-attest
-    # 生产环境需在 GitHub Environments 中配置 required reviewers=2
+    needs: build-and-sign
+    # 在仓库 settings -> environments -> production 中设置 Required reviewers = 2
     environment:
       name: production
-    concurrency:
-      group: production-release
-      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.6.0
-
-      - name: Verify image signatures before deployment
-        env:
-          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}@${{ needs.build-sign-and-attest.outputs.backend_digest }}
-          MODEL_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_MODEL_API }}@${{ needs.build-sign-and-attest.outputs.model_digest }}
-        run: |
-          ./scripts/verify_release_integrity.sh "$BACKEND_IMAGE" "$MODEL_IMAGE"
-
-      - name: Write deployment audit record
-        run: |
+      - uses: sigstore/cosign-installer@v3.6.0
+      - env:
+          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}@${{ needs.build-and-sign.outputs.backend_digest }}
+          MODEL_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_MODEL_API }}@${{ needs.build-and-sign.outputs.model_digest }}
+        run: ./scripts/verify_release_integrity.sh "$BACKEND_IMAGE" "$MODEL_IMAGE"
+      - run: |
           mkdir -p release-audit
           cat > release-audit/production-release.json <<EOF
           {
             "releaseTag": "${{ github.event.inputs.release_tag }}",
             "commit": "${{ github.sha }}",
             "actor": "${{ github.actor }}",
-            "backendDigest": "${{ needs.build-sign-and-attest.outputs.backend_digest }}",
-            "modelDigest": "${{ needs.build-sign-and-attest.outputs.model_digest }}",
+            "backendDigest": "${{ needs.build-and-sign.outputs.backend_digest }}",
+            "modelDigest": "${{ needs.build-and-sign.outputs.model_digest }}",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
-
-      - name: Upload audit artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: production-release-audit
           path: release-audit/production-release.json
-
-      - name: Deploy (placeholder command)
-        run: |
-          echo "Deploy verified digests to production"
-          echo "Use scripts/rollback_release.sh for one-click downgrade if needed"
