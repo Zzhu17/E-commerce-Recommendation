@@ -84,10 +84,16 @@ jobs:
 
       - name: License compliance check (deny high-risk licenses)
         run: |
+          python -m venv .licenv_api
+          ./.licenv_api/bin/pip install --upgrade pip
+          ./.licenv_api/bin/pip install --require-hashes -r model-api/requirements.lock
+          ./.licenv_api/bin/pip install pip-licenses
           pip-licenses \
+            --python ./.licenv_api/bin/python \
             --from=mixed \
             --with-urls \
-            --allow-only='MIT License;MIT;BSD License;BSD-2-Clause;BSD-3-Clause;Apache Software License;Apache License 2.0;Apache-2.0;Python Software Foundation License;PSF-2.0;ISC License;ISC License (ISCL);MPL-2.0;Public Domain;LGPLv2+;LGPLv3+'
+            --partial-match \
+            --allow-only='MIT License;MIT;BSD License;BSD-2-Clause;BSD-3-Clause;Apache Software License;Apache License 2.0;Apache License, Version 2.0;Apache 2.0;Apache-2.0;Python Software Foundation License;PSF-2.0;ISC License;ISC License (ISCL);MPL-2.0;Mozilla Public License 2.0 (MPL 2.0);Public Domain;LGPLv2+;LGPLv3+'
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
