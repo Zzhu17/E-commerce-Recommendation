@@ -40,7 +40,7 @@ public class FilterConfig {
     JwtAuthFilter filter = new JwtAuthFilter(securityProperties, jwtAuthService, rateLimitStore, securityMonitoringService);
     FilterRegistrationBean<JwtAuthFilter> bean = new FilterRegistrationBean<>();
     bean.setFilter(filter);
-    bean.addUrlPatterns("/api/*");
+    bean.addUrlPatterns("/api/*", "/actuator/*");
     bean.setOrder(2);
     return bean;
   }
@@ -52,7 +52,7 @@ public class FilterConfig {
     RateLimitFilter filter = new RateLimitFilter(rateLimitProperties, rateLimitStore);
     FilterRegistrationBean<RateLimitFilter> bean = new FilterRegistrationBean<>();
     bean.setFilter(filter);
-    bean.addUrlPatterns("/api/*");
+    bean.addUrlPatterns("/api/*", "/actuator/*");
     bean.setOrder(3);
     return bean;
   }

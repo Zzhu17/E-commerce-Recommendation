@@ -63,7 +63,7 @@ public class RecommendationController {
       @Pattern(regexp = "^[a-zA-Z0-9_-]*$")
       String requestId
   ) {
-    return service.getRecommendations(requestId, userId, scene, size);
+    return service.getRecommendations(userId, scene, size);
   }
 
   @Operation(summary = "Feedback event")

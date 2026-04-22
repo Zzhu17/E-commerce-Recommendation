@@ -31,8 +31,8 @@ public class RecommendationService {
     this.recommendationCache = recommendationCache;
   }
 
-  public RecommendationResponse getRecommendations(String requestId, String userId, String scene, int size) {
-    String rid = (requestId == null || requestId.isBlank()) ? RequestIdUtil.newRequestId() : requestId;
+  public RecommendationResponse getRecommendations(String userId, String scene, int size) {
+    String rid = RequestIdUtil.currentOrUnknown();
     String cacheKey = userId + "|" + scene + "|" + size;
     RecommendationResponse cached = recommendationCache.get(cacheKey);
     if (cached != null) {

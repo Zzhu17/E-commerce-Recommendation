@@ -92,7 +92,7 @@ public class AdminController {
     adminAuditService.log(
         adminAccessService.currentAuth(request).subject(),
         "feedback_export",
-        "userId=" + userId + ",rows=" + events.size()
+        "rows=" + events.size()
     );
     return events;
   }

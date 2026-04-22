@@ -17,6 +17,9 @@ public class RequestIdFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     String requestId = request.getHeader(HEADER);
     if (!RequestIdUtil.isValid(requestId)) {
+      requestId = request.getParameter("requestId");
+    }
+    if (!RequestIdUtil.isValid(requestId)) {
       requestId = RequestIdUtil.newRequestId();
     }
     MDC.put("requestId", requestId);
