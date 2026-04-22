@@ -20,7 +20,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getRequestURI();
-    return path != null && (path.equals("/api/health") || path.equals("/api/version"));
+    return isPublicPath(path);
   }
 
   @Override
@@ -42,12 +42,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     boolean allowed = rateLimitStore.allow(key, properties.getLimit(), properties.getWindowSeconds());
     if (!allowed) {
-      response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-      response.setContentType("application/json");
-      response.getWriter().write("{\"code\":\"RATE_LIMITED\",\"message\":\"too many requests\"}");
+      FilterErrorResponseWriter.write(response, HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", "too many requests");
       return;
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  private boolean isPublicPath(String path) {
+    return path != null && (
+        path.equals("/api/health")
+            || path.equals("/api/version")
+            || path.startsWith("/actuator/health")
+            || path.equals("/actuator/info"));
   }
 }

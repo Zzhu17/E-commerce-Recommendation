@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
@@ -40,12 +41,16 @@ public class DataRetentionService {
           properties.getColdDays(),
           properties.getCleanup().getBatchSize()
       );
-      long artifactsPurged = cleanupArtifacts();
+      CleanupResult cleanup = cleanupArtifacts();
       retentionAuditService.recordRun(
           "retention_cleanup",
-          "success",
-          tierUpdated + feedbackPurged + artifactsPurged,
-          "tier-updated=" + tierUpdated + ",feedback-purged=" + feedbackPurged + ",artifacts-purged=" + artifactsPurged,
+          cleanup.failedPaths().isEmpty() ? "success" : "partial_success",
+          tierUpdated + feedbackPurged + cleanup.purgedCount(),
+          "tier-updated=" + tierUpdated
+              + ",feedback-purged=" + feedbackPurged
+              + ",purged-count=" + cleanup.purgedCount()
+              + ",skipped-paths=" + String.join("|", cleanup.skippedPaths())
+              + ",failed-paths=" + String.join("|", cleanup.failedPaths()),
           startedAt,
           Instant.now()
       );
@@ -55,24 +60,31 @@ public class DataRetentionService {
     }
   }
 
-  private long cleanupArtifacts() {
+  private CleanupResult cleanupArtifacts() {
     Instant threshold = Instant.now().minusSeconds((long) properties.getArtifact().getTtlDays() * 24 * 3600);
     List<String> extensions = properties.getArtifact().getIncludeExtensions().stream()
         .map(ext -> ext.toLowerCase(Locale.ROOT))
         .toList();
 
     long removed = 0;
+    List<String> skippedPaths = new ArrayList<>();
+    List<String> failedPaths = new ArrayList<>();
     for (String configuredPath : properties.getArtifact().getPaths()) {
-      try (Stream<Path> stream = Files.walk(Path.of(configuredPath))) {
+      Path root = Path.of(configuredPath);
+      if (Files.notExists(root)) {
+        skippedPaths.add(configuredPath);
+        continue;
+      }
+      try (Stream<Path> stream = Files.walk(root)) {
         removed += stream
             .filter(Files::isRegularFile)
             .mapToLong(path -> deleteIfExpired(path, threshold, extensions))
             .sum();
-      } catch (IOException e) {
-        throw new IllegalStateException("failed to scan artifact path: " + configuredPath, e);
+      } catch (IOException | RuntimeException e) {
+        failedPaths.add(configuredPath);
       }
     }
-    return removed;
+    return new CleanupResult(removed, skippedPaths, failedPaths);
   }
 
   private long deleteIfExpired(Path path, Instant threshold, List<String> extensions) {
@@ -91,4 +103,6 @@ public class DataRetentionService {
       throw new IllegalStateException("failed to delete artifact: " + path, e);
     }
   }
+
+  private record CleanupResult(long purgedCount, List<String> skippedPaths, List<String> failedPaths) {}
 }

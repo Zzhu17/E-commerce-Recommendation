@@ -2,7 +2,6 @@ package com.example.reco.config;
 
 import com.example.reco.service.RateLimitStore;
 import com.example.reco.service.SecurityMonitoringService;
-import com.example.reco.util.RequestIdUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -81,10 +80,6 @@ public class GatewayProtectionFilter extends OncePerRequestFilter {
   }
 
   private void reject(HttpServletResponse response, HttpStatus status, String code, String message) throws IOException {
-    String requestId = RequestIdUtil.currentOrUnknown();
-    response.setStatus(status.value());
-    response.setContentType("application/json");
-    response.getWriter().write(
-        "{\"requestId\":\"" + requestId + "\",\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
+    FilterErrorResponseWriter.write(response, status, code, message);
   }
 }
