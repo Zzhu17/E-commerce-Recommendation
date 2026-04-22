@@ -45,14 +45,14 @@ public class GatewayProtectionFilter extends OncePerRequestFilter {
     String remoteIp = request.getRemoteAddr() == null ? "unknown" : request.getRemoteAddr();
 
     String banKey = "gw:ban:ip:" + remoteIp;
-    if (!rateLimitStore.allow(banKey, 1, properties.getBanSeconds())) {
+    if (rateLimitStore.isBlocked(banKey)) {
       securityMonitoringService.recordForbidden(path);
       reject(response, HttpStatus.FORBIDDEN, "BANNED", "request denied");
       return;
     }
 
     if (isBlocked(userAgent, properties.getBlockedUserAgents()) || isBlocked(path + "?" + query, properties.getBlockedPathPatterns())) {
-      rateLimitStore.allow(banKey, 0, properties.getBanSeconds());
+      rateLimitStore.block(banKey, properties.getBanSeconds());
       securityMonitoringService.recordForbidden(path);
       reject(response, HttpStatus.FORBIDDEN, "WAF_BLOCKED", "request denied");
       return;
