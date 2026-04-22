@@ -23,14 +23,10 @@ seedPreviewEl.textContent = JSON.stringify(seedPayload, null, 2);
 
 function buildHeaders(isAdmin = false) {
   const headers = { "Content-Type": "application/json" };
-  const apiKey = apiKeyEl.value.trim();
-  const adminKey = adminKeyEl.value.trim();
+  const token = (isAdmin ? adminKeyEl : apiKeyEl).value.trim();
 
-  if (apiKey) {
-    headers["x-api-key"] = apiKey;
-  }
-  if (isAdmin && adminKey) {
-    headers["x-admin-key"] = adminKey;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
   return headers;
 }

@@ -36,7 +36,7 @@ public class RecommendationService {
     String cacheKey = userId + "|" + scene + "|" + size;
     RecommendationResponse cached = recommendationCache.get(cacheKey);
     if (cached != null) {
-      return cached;
+      return withRequestId(cached, rid);
     }
 
     List<String> candidateItems = candidateService.getCandidates(userId, scene, size * 5);
@@ -92,6 +92,17 @@ public class RecommendationService {
         requestId, userId, scene, modelProperties.getDefaultVersion(), items, 120);
     recommendationCache.put(userId + "|" + scene + "|" + size, response);
     return response;
+  }
+
+  private RecommendationResponse withRequestId(RecommendationResponse response, String requestId) {
+    return new RecommendationResponse(
+        requestId,
+        response.userId(),
+        response.scene(),
+        response.modelVersion(),
+        response.items(),
+        response.ttlSeconds()
+    );
   }
 
   private List<String> fallbackCandidates(int n) {
