@@ -2,6 +2,7 @@ package com.example.reco.service;
 
 import com.example.reco.config.FeedbackPrivacyProperties;
 import com.example.reco.dto.FeedbackRequest;
+import com.example.reco.util.RequestIdUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class FileFeedbackSink implements FeedbackSink {
 
   private Map<String, Object> sanitizePayload(FeedbackRequest request) {
     Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("requestId", request.requestId());
+    payload.put("requestId", RequestIdUtil.currentOrUnknown());
     payload.put("userId", userTokenService.tokenize(request.userId()));
     payload.put("itemId", request.itemId());
     payload.put("eventType", request.eventType());

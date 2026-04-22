@@ -12,8 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 
 class DataRetentionServiceTest {
   @TempDir Path tempDir;
@@ -92,5 +94,67 @@ class DataRetentionServiceTest {
         org.mockito.ArgumentMatchers.any(),
         org.mockito.ArgumentMatchers.any()
     );
+  }
+
+  @Test
+  void keepsSuccessfulDeletesAndFailureDetailWhenOneArtifactDeleteFails() throws IOException {
+    Path artifactsDir = tempDir.resolve("artifacts");
+    Files.createDirectories(artifactsDir);
+    Path deleted = artifactsDir.resolve("old.json");
+    Path failed = artifactsDir.resolve("broken.json");
+    Files.writeString(deleted, "{}");
+    Files.writeString(failed, "{}");
+    FileTime expired = FileTime.fromMillis(System.currentTimeMillis() - 40L * 24 * 3600 * 1000);
+    Files.setLastModifiedTime(deleted, expired);
+    Files.setLastModifiedTime(failed, expired);
+
+    DataRetentionProperties properties = new DataRetentionProperties();
+    properties.setHotDays(90);
+    properties.setWarmDays(180);
+    properties.setColdDays(365);
+
+    DataRetentionProperties.Cleanup cleanup = new DataRetentionProperties.Cleanup();
+    cleanup.setBatchSize(100);
+    properties.setCleanup(cleanup);
+
+    DataRetentionProperties.Artifact artifact = new DataRetentionProperties.Artifact();
+    artifact.setTtlDays(30);
+    artifact.setIncludeExtensions(List.of(".json"));
+    artifact.setPaths(List.of(artifactsDir.toString()));
+    properties.setArtifact(artifact);
+
+    RetentionAuditService retentionAuditService = mock(RetentionAuditService.class);
+    FeedbackAdminService feedbackAdminService = mock(FeedbackAdminService.class);
+    when(feedbackAdminService.refreshStorageTier(90, 180, 365)).thenReturn(0);
+    when(feedbackAdminService.purgeExpiredFeedback(365, 100)).thenReturn(0);
+
+    DataRetentionService service = new DataRetentionService(properties, retentionAuditService, feedbackAdminService) {
+      @Override
+      long deleteIfExpired(Path path, java.time.Instant threshold, List<String> extensions) {
+        if (path.endsWith("broken.json")) {
+          throw new IllegalStateException("delete failed");
+        }
+        return super.deleteIfExpired(path, threshold, extensions);
+      }
+    };
+
+    service.runScheduledRetention();
+
+    ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<Long> affectedRows = ArgumentCaptor.forClass(Long.class);
+    ArgumentCaptor<String> details = ArgumentCaptor.forClass(String.class);
+    verify(retentionAuditService).recordRun(
+        eq("retention_cleanup"),
+        status.capture(),
+        affectedRows.capture(),
+        details.capture(),
+        org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any()
+    );
+
+    Assertions.assertEquals("partial_success", status.getValue());
+    Assertions.assertEquals(1L, affectedRows.getValue());
+    Assertions.assertTrue(details.getValue().contains("purged-count=1"));
+    Assertions.assertTrue(details.getValue().contains("failed-paths=" + failed + ":delete failed"));
   }
 }

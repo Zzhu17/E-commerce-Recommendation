@@ -76,18 +76,21 @@ public class DataRetentionService {
         continue;
       }
       try (Stream<Path> stream = Files.walk(root)) {
-        removed += stream
-            .filter(Files::isRegularFile)
-            .mapToLong(path -> deleteIfExpired(path, threshold, extensions))
-            .sum();
-      } catch (IOException | RuntimeException e) {
-        failedPaths.add(configuredPath);
+        for (Path path : (Iterable<Path>) stream.filter(Files::isRegularFile)::iterator) {
+          try {
+            removed += deleteIfExpired(path, threshold, extensions);
+          } catch (RuntimeException e) {
+            failedPaths.add(formatFailure(path, e));
+          }
+        }
+      } catch (IOException e) {
+        failedPaths.add(formatFailure(root, e));
       }
     }
     return new CleanupResult(removed, skippedPaths, failedPaths);
   }
 
-  private long deleteIfExpired(Path path, Instant threshold, List<String> extensions) {
+  long deleteIfExpired(Path path, Instant threshold, List<String> extensions) {
     String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
     boolean matched = extensions.stream().anyMatch(name::endsWith);
     if (!matched) {
@@ -102,6 +105,11 @@ public class DataRetentionService {
     } catch (IOException e) {
       throw new IllegalStateException("failed to delete artifact: " + path, e);
     }
+  }
+
+  private String formatFailure(Path path, Exception e) {
+    String message = e.getMessage();
+    return message == null || message.isBlank() ? path.toString() : path + ":" + message;
   }
 
   private record CleanupResult(long purgedCount, List<String> skippedPaths, List<String> failedPaths) {}

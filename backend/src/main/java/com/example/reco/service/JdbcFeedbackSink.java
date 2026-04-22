@@ -3,6 +3,7 @@ package com.example.reco.service;
 import com.example.reco.config.AccessGuardProperties;
 import com.example.reco.config.FeedbackPrivacyProperties;
 import com.example.reco.dto.FeedbackRequest;
+import com.example.reco.util.RequestIdUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
@@ -45,7 +46,7 @@ public class JdbcFeedbackSink implements FeedbackSink {
 
     jdbcTemplate.update(
         sql,
-        request.requestId(),
+        RequestIdUtil.currentOrUnknown(),
         userToken,
         request.itemId(),
         request.eventType(),
